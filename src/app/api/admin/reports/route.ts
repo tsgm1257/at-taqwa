@@ -8,7 +8,10 @@ import { reportCreateSchema } from "@/lib/validators/reports";
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   await dbConnect();
@@ -39,7 +42,9 @@ export async function GET(req: Request) {
       .sort({ month: -1 })
       .skip(skip)
       .limit(limit)
-      .select("title month published createdAt currency totalIncome totalExpense closingBalance")
+      .select(
+        "title month published createdAt currency totalIncome totalExpense closingBalance"
+      )
       .lean(),
     Report.countDocuments(query),
   ]);
@@ -50,21 +55,34 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   const body = await req.json().catch(() => null);
   const parsed = reportCreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
 
   await dbConnect();
 
   const exists = await Report.findOne({ month: parsed.data.month }).lean();
   if (exists) {
-    return NextResponse.json({ ok: false, error: "A report for this month already exists." }, { status: 409 });
+    return NextResponse.json(
+      { ok: false, error: "A report for this month already exists." },
+      { status: 409 }
+    );
   }
 
   const item = await Report.create({
     ...parsed.data,
+  });
+
+  return NextResponse.json({ ok: true, item });
+}

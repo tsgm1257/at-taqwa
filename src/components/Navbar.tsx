@@ -1,150 +1,150 @@
 "use client";
-
+import React from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import Section from "./Section";
+import { Search, Sun, Moon, Globe2, LogIn, LogOut } from "lucide-react";
 import { useLanguage } from "@/app/providers";
-import ThemeToggle from "./ThemeToggle";
-import LanguageToggle from "./LanguageToggle";
-import {
-  FaUser,
-  FaCog,
-  FaDonate,
-  FaMoneyBillWave,
-  FaUserShield,
-} from "react-icons/fa";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function Navbar() {
-  const { data: session } = useSession();
-  const { t } = useLanguage();
+  const { locale, setLocale, t } = useLanguage();
+  const { data: session, status } = useSession();
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/" });
-  };
+  // simple theme toggle hook-in (optional; wire to your theme system)
+  const [isDark, setIsDark] = React.useState(false);
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) root.classList.add("dark");
+    else root.classList.remove("dark");
+  }, [isDark]);
 
   return (
-    <div className="bg-base-100 border-b border-base-300 sticky top-0 z-50">
-      <div className="navbar container mx-auto px-4 lg:px-8">
-        {/* Left side */}
-        <div className="navbar-start">
-          <Link
-            href="/"
-            className="btn btn-ghost text-xl font-bold text-primary"
-          >
-            At-Taqwa Foundation
-          </Link>
-        </div>
-
-        {/* Center links */}
-        <div className="navbar-center hidden lg:flex">
-          <ul className="menu menu-horizontal px-1">
-            <li>
-              <Link href="/projects" className="btn btn-ghost">
-                {t("nav.projects")}
-              </Link>
-            </li>
-            <li>
-              <Link href="/announcements" className="btn btn-ghost">
-                {t("nav.announcements")}
-              </Link>
-            </li>
-            <li>
-              <Link href="/events" className="btn btn-ghost">
-                {t("nav.events")}
-              </Link>
-            </li>
-            <li>
-              <Link href="/reports" className="btn btn-ghost">
-                {t("nav.reports")}
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Right side */}
-        <div className="navbar-end gap-2">
-          <LanguageToggle />
-          <ThemeToggle />
-
-          {session ? (
-            <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="btn btn-ghost">
-                <div className="avatar placeholder">
-                  <div className="bg-primary text-primary-content rounded-full w-8">
-                    <span className="text-xs">
-                      {session.user?.name?.charAt(0) ||
-                        session.user?.email?.charAt(0) ||
-                        "U"}
-                    </span>
-                  </div>
-                </div>
-                <span className="ml-2">
-                  {session.user?.name || session.user?.email}
-                </span>
-              </div>
-              <ul
-                tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-              >
-                <li>
-                  <Link href="/member" className="justify-between">
-                    <span className="flex items-center gap-2">
-                      <FaUser className="w-4 h-4" />
-                      {t("nav.dashboard")}
-                    </span>
-                    <span className="badge badge-primary">
-                      {(session.user as { role?: string })?.role}
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/member/profile"
-                    className="flex items-center gap-2"
-                  >
-                    <FaCog className="w-4 h-4" />
-                    Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/member/donations"
-                    className="flex items-center gap-2"
-                  >
-                    <FaDonate className="w-4 h-4" />
-                    My Donations
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/member/fees" className="flex items-center gap-2">
-                    <FaMoneyBillWave className="w-4 h-4" />
-                    My Fees
-                  </Link>
-                </li>
-                {(session.user as { role?: string })?.role === "Admin" && (
-                  <li>
-                    <Link href="/admin" className="flex items-center gap-2">
-                      <FaUserShield className="w-4 h-4" />
-                      Admin Panel
-                    </Link>
-                  </li>
-                )}
-                <li>
-                  <hr className="my-1" />
-                </li>
-                <li>
-                  <button onClick={handleSignOut} className="text-error">
-                    {t("nav.signOut")}
-                  </button>
-                </li>
-              </ul>
+    <>
+      {/* Main Navbar */}
+      <header className="sticky top-0 z-40 border-b border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-emerald-950/60 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+        <Section
+          id="main-navbar"
+          className="flex items-center justify-between py-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-2xl bg-emerald-500 text-white grid place-items-center font-black">
+              AT
             </div>
-          ) : (
-            <Link href="/login" className="btn btn-primary">
-              {t("nav.signIn")}
+            <div>
+              <div className="text-sm font-bold tracking-wide">
+                {t("app.title")}
+              </div>
+              <div className="text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
+                {t("hero.subtitle")}
+              </div>
+            </div>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <Link
+              href="/"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("nav.home")}
             </Link>
-          )}
-        </div>
-      </div>
-    </div>
+            <Link
+              href="/projects"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("nav.projects")}
+            </Link>
+            <Link
+              href="/donate"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("common.donate")}
+            </Link>
+            <Link
+              href="/announcements"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("nav.announcements")}
+            </Link>
+            <Link
+              href="/reports"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("nav.reports")}
+            </Link>
+            <Link
+              href="/events"
+              className="hover:text-emerald-600 dark:hover:text-emerald-300 transition"
+            >
+              {t("nav.events")}
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-sm bg-white/70 dark:bg-emerald-900/30">
+              <Search className="h-4 w-4 opacity-70" />
+              <input
+                placeholder="Search projects, events, reports"
+                className="bg-transparent outline-none w-56"
+              />
+            </div>
+
+            {/* Language, Theme, and Auth Controls */}
+            <div className="flex items-center gap-2">
+              {/* Language Toggle */}
+              <button
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-50/60 dark:bg-emerald-900/30 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100/70 dark:hover:bg-emerald-800/40 transition"
+                onClick={() => setLocale(locale === "en" ? "bn" : "en")}
+                aria-label="Toggle language"
+                title="Toggle Language"
+              >
+                <Globe2 className="h-4 w-4" />
+                {locale === "en" ? "বাংলা" : "English"}
+              </button>
+
+              {/* Theme Toggle */}
+              <button
+                aria-label="Toggle Theme"
+                className="rounded-full p-2 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 transition"
+                onClick={() => setIsDark((v) => !v)}
+              >
+                <Sun className="h-4 w-4 hidden dark:block" />
+                <Moon className="h-4 w-4 dark:hidden" />
+              </button>
+
+              {/* Auth Button */}
+              {status === "loading" ? (
+                <div className="w-8 h-8 animate-pulse bg-emerald-200 dark:bg-emerald-800 rounded-full"></div>
+              ) : session ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={session.user?.role === "Admin" ? "/admin" : "/member"}
+                    className="text-sm text-emerald-700 dark:text-emerald-200 hover:text-emerald-600 dark:hover:text-emerald-300 transition font-medium hidden sm:inline"
+                  >
+                    {t("nav.dashboard")}
+                  </Link>
+                  <button
+                    aria-label="Sign Out"
+                    className="rounded-full p-2 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 transition"
+                    onClick={() => signOut()}
+                    title={t("nav.signOut")}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  aria-label="Sign In"
+                  className="rounded-full p-2 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 transition"
+                  onClick={() => signIn()}
+                  title={t("nav.signIn")}
+                >
+                  <LogIn className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </Section>
+      </header>
+    </>
   );
 }

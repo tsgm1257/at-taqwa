@@ -1,39 +1,26 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Providers from "./providers";
-import ClientMarquee from "@/components/ClientMarquee";
-import { cookies } from "next/headers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import type { Metadata } from "next";
+import Providers from "@/app/providers";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "At-Taqwa Foundation",
-  description: "At-Taqwa Foundation",
+  description: "Youth-led Islamic charity for our village",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const cookieStore = await cookies();
-  const lang = (cookieStore.get("lang")?.value as "en" | "bn") ?? "en";
+}) {
   return (
-    <html lang={lang} suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ClientMarquee />
-        <Providers>{children}</Providers>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-white dark:bg-emerald-950 text-emerald-950 dark:text-emerald-50">
+        <Providers>
+          <Navbar />
+
+          {children}
+        </Providers>
       </body>
     </html>
   );
