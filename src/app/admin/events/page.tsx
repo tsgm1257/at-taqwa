@@ -11,7 +11,19 @@ export default function AdminEventsPage() {
     location: "",
     visibility: "public",
   });
-  const [items, setItems] = useState<any[]>([]);
+
+  type EventItem = {
+    id: string;
+    title: string;
+    description: string;
+    start: string;
+    end: string;
+    location: string;
+    visibility: string;
+    // Add other fields as needed
+  };
+
+  const [items, setItems] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -69,8 +81,8 @@ export default function AdminEventsPage() {
         <h2 className="text-xl font-semibold mb-3">Upcoming Events</h2>
         {loading ? "Loading…" : items.length === 0 ? "No events" : (
           <ul className="space-y-2">
-            {items.map((e:any) => (
-              <li key={e._id} className="flex items-center justify-between border-b pb-2">
+            {items.map((e, idx) => (
+              <li key={e.title + e.start + idx} className="flex items-center justify-between border-b pb-2">
                 <div>
                   <div className="font-medium">{e.title}</div>
                   <div className="text-sm opacity-70">

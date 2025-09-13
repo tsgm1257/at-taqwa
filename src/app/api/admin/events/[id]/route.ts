@@ -6,14 +6,20 @@ import Event from "@/models/Event";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if ((session?.user?.role ?? null) !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
   await dbConnect();
 
-  const update: any = { ...body };
+  interface UpdateEvent {
+    [key: string]: unknown;
+    start?: Date;
+    end?: Date;
+  }
+
+  const update: UpdateEvent = { ...body };
   if (body.start) update.start = new Date(body.start);
   if (body.end) update.end = new Date(body.end);
 
@@ -24,7 +30,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if ((session?.user?.role ?? null) !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
   await dbConnect();

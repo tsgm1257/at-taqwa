@@ -8,7 +8,10 @@ import { genFeesSchema } from "@/lib/validators/fees";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  const userRole = (session?.user && typeof session.user === "object" && "role" in session.user)
+    ? (session.user as { role?: string }).role
+    : undefined;
+  if (userRole !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
@@ -41,7 +44,10 @@ export async function POST(req: Request) {
         },
         { upsert: true }
       );
-      if ((res as any).upsertedCount === 1 || (res as any).upserted) created += 1;
+      
+      type UpdateResult = { upsertedCount?: number; upserted?: unknown };
+      const { upsertedCount, upserted } = res as UpdateResult;
+      if (upsertedCount === 1 || upserted) created += 1;
     })
   );
 

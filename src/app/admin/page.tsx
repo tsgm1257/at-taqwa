@@ -9,7 +9,7 @@ export default async function AdminDashboard() {
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <p className="mt-2 text-base-content/70">
         Signed in as <span className="font-medium">{session?.user?.email}</span>{" "}
-        (role: <span className="font-medium">{(session?.user as any)?.role}</span>)
+        (role: <span className="font-medium">{session?.user && "role" in session.user ? (session.user as { role?: string }).role : "unknown"}</span>)
       </p>
 
       <div className="grid md:grid-cols-2 gap-4 mt-6">

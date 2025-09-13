@@ -9,11 +9,16 @@ import { adminOfflineDonationSchema } from "@/lib/validators/donations";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if (session?.user && typeof session.user === "object" && (session.user as { role?: string }).role !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await req.json().catch(() => null);
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    body = null;
+  }
   const parsed = adminOfflineDonationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
@@ -26,21 +31,22 @@ export async function POST(req: Request) {
   let resolvedUserId = userId;
   if (!resolvedUserId && email) {
     const u = await User.findOne({ email }, { _id: 1 }).lean();
-    if (!u) {
+    if (!u || !("_id" in u)) {
       return NextResponse.json({ ok: false, error: "User email not found" }, { status: 404 });
     }
-    resolvedUserId = String(u._id);
-  }
-  if (!resolvedUserId) {
-    return NextResponse.json({ ok: false, error: "Provide userId or email" }, { status: 400 });
-  }
+    resolvedUserId = String((u as { _id: unknown })._id);
+    if (!resolvedUserId) {
+        return NextResponse.json({ ok: false, error: "Provide userId or email" }, { status: 400 });
+      }
 
   // Resolve project
   let resolvedProjectId = projectId;
   if (!resolvedProjectId && projectSlug) {
     const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
-    if (!p) return NextResponse.json({ ok: false, error: "Project not found" }, { status: 404 });
-    resolvedProjectId = String(p._id);
+    if (!p || !("_id" in p)) {
+      return NextResponse.json({ ok: false, error: "Project not found" }, { status: 404 });
+    }
+    resolvedProjectId = String((p as { _id: unknown })._id);
   }
 
   // Create succeeded cash donation
@@ -52,7 +58,7 @@ export async function POST(req: Request) {
     method: "cash",
     status: "succeeded",
     receiptUrl,
-    meta: { note, createdBy: session.user?.email },
+    meta: { note, createdBy: session?.user?.email },
   });
 
   // Update project raisedAmount if donation linked to a project
@@ -61,4 +67,5 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ ok: true, id: String(d._id) }, { status: 201 });
+}
 }

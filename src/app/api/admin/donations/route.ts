@@ -8,7 +8,9 @@ import Project from "@/models/Project";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if (session?.user && typeof session.user === "object" && "role" in session.user && session.user.role === "Admin") {
+    // proceed
+  } else {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
@@ -24,18 +26,25 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") || 20);
   const skip = (page - 1) * limit;
 
-  const q: any = {};
+  interface DonationQuery {
+    status?: string;
+    method?: string;
+    userId?: unknown;
+    projectId?: unknown;
+  }
+
+  const q: DonationQuery = {};
   if (status) q.status = status;
   if (method) q.method = method;
 
   if (email) {
     const u = await User.findOne({ email }, { _id: 1 }).lean();
-    q.userId = u ? u._id : null;
+    q.userId = u && typeof u === "object" && "_id" in u ? u._id : null;
   }
 
   if (projectSlug) {
     const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
-    q.projectId = p ? p._id : null;
+    q.projectId = p && typeof p === "object" && "_id" in p ? p._id : null;
   }
 
   const [items, total] = await Promise.all([

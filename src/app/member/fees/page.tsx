@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 
 type Fee = {
   _id: string;
-  month: string;        // "YYYY-MM"
+  month: string; // "YYYY-MM"
   amount: number;
   status: "unpaid" | "partial" | "paid" | "waived";
   paidAt?: string;
@@ -16,21 +22,28 @@ type Fee = {
 export default function MemberFeesPage() {
   const [year, setYear] = useState<string>(new Date().getFullYear().toString());
   const [items, setItems] = useState<Fee[]>([]);
-  const [totals, setTotals] = useState<{ amount: number; due: number }>({ amount: 0, due: 0 });
+  const [totals, setTotals] = useState<{ amount: number; due: number }>({
+    amount: 0,
+    due: 0,
+  });
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/member/fees?year=${year}`, { cache: "no-store" });
+    const res = await fetch(`/api/member/fees?year=${year}`, {
+      cache: "no-store",
+    });
     const json = await res.json();
     if (json.ok) {
       setItems(json.items);
       setTotals(json.totals);
     }
     setLoading(false);
-  };
+  }, [year]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [year]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const chartData = useMemo(() => {
     return items.map((f) => ({
@@ -41,10 +54,13 @@ export default function MemberFeesPage() {
   }, [items]);
 
   const badge = (s: Fee["status"]) =>
-    s === "paid" ? "badge-success"
-    : s === "partial" ? "badge-warning"
-    : s === "waived" ? "badge-info"
-    : "badge-error";
+    s === "paid"
+      ? "badge-success"
+      : s === "partial"
+      ? "badge-warning"
+      : s === "waived"
+      ? "badge-info"
+      : "badge-error";
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -102,12 +118,20 @@ export default function MemberFeesPage() {
                   <tr key={f._id}>
                     <td>{f.month}</td>
                     <td>{f.amount}</td>
-                    <td><span className={`badge ${badge(f.status)}`}>{f.status}</span></td>
-                    <td>{f.paidAt ? new Date(f.paidAt).toLocaleDateString() : "-"}</td>
+                    <td>
+                      <span className={`badge ${badge(f.status)}`}>
+                        {f.status}
+                      </span>
+                    </td>
+                    <td>
+                      {f.paidAt ? new Date(f.paidAt).toLocaleDateString() : "-"}
+                    </td>
                   </tr>
                 ))}
                 {items.length === 0 && (
-                  <tr><td colSpan={4}>No fees created for this year.</td></tr>
+                  <tr>
+                    <td colSpan={4}>No fees created for this year.</td>
+                  </tr>
                 )}
               </tbody>
             </table>

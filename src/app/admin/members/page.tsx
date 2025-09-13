@@ -42,7 +42,15 @@ export default function AdminMembersPage() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold">Membership Requests</h1>
-        <select className="select select-bordered" value={status} onChange={(e) => setStatus(e.target.value as any)}>
+        <select
+          className="select select-bordered"
+          value={status}
+          onChange={(e) =>
+            setStatus(
+              e.target.value as "pending" | "approved" | "denied"
+            )
+          }
+        >
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="denied">Denied</option>

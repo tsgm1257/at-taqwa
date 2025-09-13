@@ -1,0 +1,21 @@
+{
+  "app.title": "At-Taqwa Foundation",
+  "nav.projects": "Projects",
+  "nav.announcements": "Announcements",
+  "nav.events": "Events",
+  "nav.reports": "Reports",
+  "nav.dashboard": "Dashboard",
+  "nav.signIn": "Sign in",
+  "nav.signOut": "Sign out",
+  "common.donate": "Donate",
+  "common.loading": "Loading...",
+  "common.noData": "No data",
+  "hero.title": "At-Taqwa Foundation",
+  "hero.subtitle": "Empowering communities through faith, charity, and youth leadership. Join us in making a positive impact in our village and beyond.",
+  "hero.joinButton": "Join Our Community",
+  "hero.projectsButton": "View Projects",
+  "features.title": "Our Platform Features",
+  "features.subtitle": "A comprehensive digital platform designed to streamline charity operations, enhance transparency, and strengthen community bonds.",
+  "impact.title": "Our Impact",
+  "impact.subtitle": "Numbers that reflect our commitment to community service and transparent charity work."
+}

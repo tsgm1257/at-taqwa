@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
-import dynamic from "next/dynamic";
-
-const Marquee = dynamic(() => import("@/components/Marquee"), { ssr: false });
+import ClientMarquee from "@/components/ClientMarquee";
+import { cookies } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,17 +20,19 @@ export const metadata: Metadata = {
   description: "At-Taqwa Foundation",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const lang = (cookieStore.get("lang")?.value as "en" | "bn") ?? "en";
   return (
-    <html lang="en">
+    <html lang={lang} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Marquee />
+        <ClientMarquee />
         <Providers>{children}</Providers>
       </body>
     </html>

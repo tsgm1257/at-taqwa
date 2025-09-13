@@ -7,7 +7,9 @@ import User from "@/models/User";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if (session?.user && typeof session.user === "object" && "role" in session.user && session.user.role === "Admin") {
+    // proceed
+  } else {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
@@ -21,7 +23,7 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") || 20);
   const skip = (page - 1) * limit;
 
-  const userFilter: any = {};
+  const userFilter: Partial<{ role: string }> = {};
   if (role) userFilter.role = role;
 
   let userIds: string[] | undefined;
@@ -30,7 +32,13 @@ export async function GET(req: Request) {
     userIds = users.map((u) => String(u._id));
   }
 
-  const q: any = {};
+  interface FeeQuery {
+    month?: string;
+    status?: string;
+    userId?: { $in: string[] };
+  }
+
+  const q: FeeQuery = {};
   if (month) q.month = month;
   if (status) q.status = status;
   if (userIds) q.userId = { $in: userIds };

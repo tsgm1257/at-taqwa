@@ -6,7 +6,11 @@ import MembershipRequest from "@/models/MembershipRequest";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if (session?.user && typeof session.user === "object" && "role" in session.user) {
+    if ((session.user as { role?: string }).role !== "Admin") {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+  } else {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 

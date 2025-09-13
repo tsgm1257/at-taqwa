@@ -1,10 +1,19 @@
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import ImpactSection from "@/components/ImpactSection";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="p-10">
-      <h1 className="text-3xl font-bold text-primary">Hello At-Taqwa</h1>
-      <button className="btn btn-primary mt-4">DaisyUI Button</button>
-    </main>
+    <div className="min-h-screen">
+      <Navbar />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <ImpactSection />
+      </main>
+      <Footer />
+    </div>
   );
 }
-

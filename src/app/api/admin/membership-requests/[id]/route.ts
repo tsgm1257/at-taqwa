@@ -8,7 +8,8 @@ import { membershipModerateSchema } from "@/lib/validators/membership";
 
 export async function PATCH(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  const userRole = (session?.user && "role" in session.user) ? (session.user as { role?: string }).role : undefined;
+  if (userRole !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
@@ -29,7 +30,7 @@ export async function PATCH(_req: Request, { params }: { params: { id: string } 
     }
 
     reqDoc.status = action === "approve" ? "approved" : "denied";
-    reqDoc.reviewedBy = session.user?.email || "admin";
+    reqDoc.reviewedBy = session?.user?.email || "admin";
     reqDoc.reviewedAt = new Date();
     await reqDoc.save();
 
@@ -43,7 +44,8 @@ export async function PATCH(_req: Request, { params }: { params: { id: string } 
     }
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || "Update failed" }, { status: 500 });
+  } catch (e) {
+    const errorMessage = e instanceof Error ? e.message : "Update failed";
+    return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
   }
 }

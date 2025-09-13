@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const limit = Number(searchParams.get("limit") || 12);
   const skip = (page - 1) * limit;
 
-  const query: any = {};
+  const query: Record<string, unknown> = {};
   if (status) query.status = status;
 
   const [items, total] = await Promise.all([

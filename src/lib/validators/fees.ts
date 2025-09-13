@@ -5,14 +5,13 @@ export const genFeesSchema = z.object({
   amount: z.number().min(0),
   roles: z.array(z.enum(["Admin", "Member"])).nonempty(),
 });
-
 export type GenFeesInput = z.infer<typeof genFeesSchema>;
 
 export const adminFeeUpdateSchema = z.object({
   status: z.enum(["unpaid", "partial", "paid", "waived"]).optional(),
   amount: z.number().min(0).optional(),
-  paidAt: z.string().datetime().optional(), // ISO
+  paidAmount: z.number().min(0).optional(), // NEW
+  paidAt: z.string().datetime().optional(),
   notes: z.string().max(500).optional(),
 });
-
 export type AdminFeeUpdateInput = z.infer<typeof adminFeeUpdateSchema>;

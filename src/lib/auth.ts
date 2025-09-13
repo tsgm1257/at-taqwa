@@ -4,6 +4,15 @@ import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcrypt";
 
+// Define the user type for better type safety
+interface UserDocument {
+  _id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: "Admin" | "Member" | "User";
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
@@ -17,9 +26,14 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         await dbConnect();
-        const user = await User.findOne({ email: credentials.email }).lean();
+        const user = (await User.findOne({
+          email: credentials.email,
+        }).lean()) as UserDocument | null;
         if (!user) return null;
-        const ok = await bcrypt.compare(credentials.password, user.passwordHash);
+        const ok = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        );
         if (!ok) return null;
 
         // What gets encoded into the JWT
@@ -27,22 +41,24 @@ export const authOptions: NextAuthOptions = {
           id: String(user._id),
           name: user.name,
           email: user.email,
-          role: user.role as "Admin" | "Member" | "User",
+          role: user.role,
         };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as any).role;
+      if (user && "role" in user) {
+        token.role = user.role as "Admin" | "Member" | "User";
       }
       return token;
     },
     async session({ session, token }) {
-      if (!session.user) session.user = { name: null, email: null } as any;
-      (session.user as any).id = token.sub;
-      (session.user as any).role = token.role;
+      if (!session.user) {
+        session.user = { name: null, email: null };
+      }
+      session.user.id = token.sub;
+      session.user.role = token.role;
       return session;
     },
   },

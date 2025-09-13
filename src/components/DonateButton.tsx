@@ -22,8 +22,12 @@ export default function DonateButton({ projectSlug }: { projectSlug?: string }) 
       if (!json.ok) throw new Error(typeof json.error === "string" ? json.error : "Failed");
       setMsg(`Donation created. ID: ${json.id}. Gateway integration coming soon.`);
       // Later: window.location.href = json.redirectUrl
-    } catch (e: any) {
-      setMsg(e.message || "Failed to start donation");
+    } catch (e) {
+      if (e instanceof Error) {
+        setMsg(e.message || "Failed to start donation");
+      } else {
+        setMsg("Failed to start donation");
+      }
     } finally {
       setLoading(false);
     }
@@ -45,8 +49,15 @@ export default function DonateButton({ projectSlug }: { projectSlug?: string }) 
               </label>
               <label className="form-control">
                 <span className="label-text">Method</span>
-                <select className="select select-bordered"
-                  value={method} onChange={e => setMethod(e.target.value as any)}>
+                <select
+                  className="select select-bordered"
+                  value={method}
+                  onChange={e =>
+                    setMethod(
+                      e.target.value as "sslcommerz" | "bkash" | "nagad"
+                    )
+                  }
+                >
                   <option value="sslcommerz">SSLCommerz</option>
                   <option value="bkash">bKash</option>
                   <option value="nagad">Nagad</option>

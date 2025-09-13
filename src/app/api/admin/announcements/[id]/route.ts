@@ -7,7 +7,7 @@ import { announcementUpdateSchema } from "@/lib/validators/content";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if ((session?.user?.role ?? null) !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
@@ -19,18 +19,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await dbConnect();
 
-  const update: any = { ...parsed.data };
-  if (parsed.data.publishedAt) update.publishedAt = new Date(parsed.data.publishedAt);
+  const update: Record<string, unknown> = { ...parsed.data };
+  if (parsed.data.publishedAt) {
+    update.publishedAt = new Date(parsed.data.publishedAt);
+  }
 
   const item = await Announcement.findByIdAndUpdate(params.id, update, { new: true });
-  if (!item) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+  if (!item) {
+    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true, item });
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if ((session?.user?.role ?? null) !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
   await dbConnect();

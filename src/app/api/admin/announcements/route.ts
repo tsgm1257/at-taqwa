@@ -7,7 +7,7 @@ import { announcementCreateSchema } from "@/lib/validators/content";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== "Admin") {
+  if (session?.user && "role" in session.user && session.user.role !== "Admin") {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 

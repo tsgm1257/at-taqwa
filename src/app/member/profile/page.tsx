@@ -40,8 +40,12 @@ export default function ProfilePage() {
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Upload failed");
       setUploadedUrl(json.url);
-    } catch (err: any) {
-      setError(err.message || "Upload failed");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "Upload failed");
+      } else {
+        setError("Upload failed");
+      }
     } finally {
       setUploading(false);
     }

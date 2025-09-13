@@ -14,8 +14,10 @@ type ApiEvent = {
   location?: string;
 };
 
+import { enUS } from "date-fns/locale/en-US";
+
 const locales = {
-  "en-US": require("date-fns/locale/en-US"),
+  "en-US": enUS,
 };
 const localizer = dateFnsLocalizer({
   format,

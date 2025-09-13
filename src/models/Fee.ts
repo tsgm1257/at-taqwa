@@ -5,7 +5,13 @@ const FeeSchema = new Schema(
     userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
     month: { type: String, required: true, index: true }, // "YYYY-MM"
     amount: { type: Number, required: true, min: 0 },
-    status: { type: String, enum: ["unpaid", "partial", "paid", "waived"], default: "unpaid", index: true },
+    status: {
+      type: String,
+      enum: ["unpaid", "partial", "paid", "waived"],
+      default: "unpaid",
+      index: true,
+    },
+    paidAmount: { type: Number, default: 0, min: 0 }, // NEW: track how much was paid (for partials)
     paidAt: { type: Date },
     notes: { type: String },
   },
