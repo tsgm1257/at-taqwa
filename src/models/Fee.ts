@@ -1,0 +1,17 @@
+import { Schema, model, models, Types } from "mongoose";
+
+const FeeSchema = new Schema(
+  {
+    userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
+    month: { type: String, required: true, index: true }, // "YYYY-MM"
+    amount: { type: Number, required: true, min: 0 },
+    status: { type: String, enum: ["unpaid", "partial", "paid", "waived"], default: "unpaid", index: true },
+    paidAt: { type: Date },
+    notes: { type: String },
+  },
+  { timestamps: true }
+);
+
+FeeSchema.index({ userId: 1, month: 1 }, { unique: true });
+
+export default models.Fee || model("Fee", FeeSchema);
