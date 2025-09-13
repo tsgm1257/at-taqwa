@@ -1,0 +1,64 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { dbConnect } from "@/lib/db";
+import Donation from "@/models/Donation";
+import User from "@/models/User";
+import Project from "@/models/Project";
+import { adminOfflineDonationSchema } from "@/lib/validators/donations";
+
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if ((session?.user as any)?.role !== "Admin") {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const parsed = adminOfflineDonationSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
+  }
+  const { email, userId, amount, currency, projectId, projectSlug, receiptUrl, note } = parsed.data;
+
+  await dbConnect();
+
+  // Resolve user
+  let resolvedUserId = userId;
+  if (!resolvedUserId && email) {
+    const u = await User.findOne({ email }, { _id: 1 }).lean();
+    if (!u) {
+      return NextResponse.json({ ok: false, error: "User email not found" }, { status: 404 });
+    }
+    resolvedUserId = String(u._id);
+  }
+  if (!resolvedUserId) {
+    return NextResponse.json({ ok: false, error: "Provide userId or email" }, { status: 400 });
+  }
+
+  // Resolve project
+  let resolvedProjectId = projectId;
+  if (!resolvedProjectId && projectSlug) {
+    const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
+    if (!p) return NextResponse.json({ ok: false, error: "Project not found" }, { status: 404 });
+    resolvedProjectId = String(p._id);
+  }
+
+  // Create succeeded cash donation
+  const d = await Donation.create({
+    userId: resolvedUserId,
+    projectId: resolvedProjectId,
+    amount,
+    currency: currency || "BDT",
+    method: "cash",
+    status: "succeeded",
+    receiptUrl,
+    meta: { note, createdBy: session.user?.email },
+  });
+
+  // Update project raisedAmount if donation linked to a project
+  if (resolvedProjectId) {
+    await Project.findByIdAndUpdate(resolvedProjectId, { $inc: { raisedAmount: amount } });
+  }
+
+  return NextResponse.json({ ok: true, id: String(d._id) }, { status: 201 });
+}
