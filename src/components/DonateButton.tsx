@@ -20,8 +20,13 @@ export default function DonateButton({ projectSlug }: { projectSlug?: string }) 
       });
       const json = await res.json();
       if (!json.ok) throw new Error(typeof json.error === "string" ? json.error : "Failed");
-      setMsg(`Donation created. ID: ${json.id}. Gateway integration coming soon.`);
-      // Later: window.location.href = json.redirectUrl
+      
+      if (json.redirectUrl) {
+        // Redirect to payment gateway or success page
+        window.location.href = json.redirectUrl;
+      } else {
+        setMsg(`Donation created. ID: ${json.id}`);
+      }
     } catch (e) {
       if (e instanceof Error) {
         setMsg(e.message || "Failed to start donation");

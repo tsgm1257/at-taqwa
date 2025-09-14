@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
+import { sslcommerzService } from "@/lib/sslcommerz";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 import { donationInitSchema } from "@/lib/validators/donations";
@@ -53,21 +55,71 @@ export async function POST(req: Request) {
     meta: { note },
   });
 
-  // For SSLCommerz integration, this would redirect to the payment gateway
-  // For now, we simulate a successful payment and redirect to the pending page
+  // Handle SSLCommerz integration
   if (method === "sslcommerz") {
-    // In a real implementation, this would redirect to SSLCommerz
-    const redirectUrl = `/donations/pending/${doc._id}`;
-    return NextResponse.json(
-      { ok: true, id: String(doc._id), redirectUrl },
-      { status: 201 }
-    );
-  } else {
-    // For other methods (bkash, nagad, cash), redirect to pending page
-    const redirectUrl = `/donations/pending/${doc._id}`;
-    return NextResponse.json(
-      { ok: true, id: String(doc._id), redirectUrl },
-      { status: 201 }
-    );
+    try {
+      const baseUrl = env.NEXTAUTH_URL();
+      const tran_id = `DON_${doc._id}_${Date.now()}`;
+      
+      const paymentConfig = {
+        total_amount: amount,
+        currency: currency || "BDT",
+        tran_id,
+        success_url: `${baseUrl}/api/donations/success`,
+        fail_url: `${baseUrl}/api/donations/fail`,
+        cancel_url: `${baseUrl}/api/donations/cancel`,
+        ipn_url: `${baseUrl}/api/donations/ipn`,
+        cus_name: (session?.user as any)?.name || "Donor",
+        cus_email: (session?.user as any)?.email || "donor@example.com",
+        cus_add1: "Dhaka",
+        cus_city: "Dhaka",
+        cus_postcode: "1000",
+        cus_country: "Bangladesh",
+        cus_phone: "01700000000",
+        value_a: String(doc._id), // Donation ID
+        value_b: userId,
+        value_c: projectId || "",
+        value_d: note || "",
+      };
+
+      const sslResult = await sslcommerzService.initiatePayment(paymentConfig);
+      
+      if (sslResult.status === "SUCCESS" && sslResult.GatewayPageURL) {
+        // Update donation with transaction ID
+        await Donation.findByIdAndUpdate(doc._id, {
+          meta: { 
+            ...doc.meta,
+            tran_id,
+            ssl_sessionkey: sslResult.sessionkey,
+            ssl_gw: sslResult.gw
+          }
+        });
+
+        return NextResponse.json({
+          ok: true,
+          id: String(doc._id),
+          redirectUrl: sslResult.GatewayPageURL,
+          tran_id,
+        });
+      } else {
+        throw new Error(sslResult.failedreason || "Payment initiation failed");
+      }
+    } catch (error) {
+      console.error("SSLCommerz integration error:", error);
+      // Fallback to pending page
+      return NextResponse.json({
+        ok: true,
+        id: String(doc._id),
+        redirectUrl: `/donations/pending/${doc._id}`,
+        error: "Payment gateway temporarily unavailable",
+      });
+    }
   }
+
+  // For other methods (bkash, nagad, cash), redirect to pending page
+  const redirectUrl = `/donations/pending/${doc._id}`;
+  return NextResponse.json(
+    { ok: true, id: String(doc._id), redirectUrl },
+    { status: 201 }
+  );
 }
