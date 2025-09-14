@@ -103,7 +103,20 @@ export async function POST(req: Request) {
         value_d: note || "",
       };
 
+      console.log("Calling SSLCommerz service with config:", {
+        total_amount: paymentConfig.total_amount,
+        currency: paymentConfig.currency,
+        tran_id: paymentConfig.tran_id,
+        store_id: storeId.substring(0, 4) + "***"
+      });
+
       const sslResult = await sslcommerzService.initiatePayment(paymentConfig);
+      
+      console.log("SSLCommerz response:", {
+        status: sslResult.status,
+        gatewayUrl: sslResult.GatewayPageURL ? "Generated" : "Not generated",
+        failedreason: sslResult.failedreason
+      });
       
       if (sslResult.status === "SUCCESS" && sslResult.GatewayPageURL) {
         // Update donation with transaction ID

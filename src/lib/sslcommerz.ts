@@ -34,11 +34,15 @@ export class SSLCommerzService {
   private sslcommerz: SSLCommerzPayment;
 
   constructor() {
-    this.sslcommerz = new SSLCommerzPayment(
-      env.SSLCZ.STORE_ID(),
-      env.SSLCZ.STORE_PASSWD(),
-      env.SSLCZ.IS_SANDBOX()
-    );
+    const storeId = process.env.SSLCZ_STORE_ID;
+    const storePasswd = process.env.SSLCZ_STORE_PASSWD;
+    const isSandbox = process.env.SSLCZ_IS_SANDBOX === "true";
+    
+    if (!storeId || !storePasswd) {
+      throw new Error("SSLCommerz credentials not configured. Please set SSLCZ_STORE_ID and SSLCZ_STORE_PASSWD environment variables.");
+    }
+    
+    this.sslcommerz = new SSLCommerzPayment(storeId, storePasswd, isSandbox);
   }
 
   async initiatePayment(config: Partial<SSLCommerzConfig>): Promise<{
@@ -50,8 +54,8 @@ export class SSLCommerzService {
   }> {
     try {
       const paymentData: SSLCommerzConfig = {
-        store_id: env.SSLCZ.STORE_ID(),
-        store_passwd: env.SSLCZ.STORE_PASSWD(),
+        store_id: process.env.SSLCZ_STORE_ID!,
+        store_passwd: process.env.SSLCZ_STORE_PASSWD!,
         total_amount: config.total_amount || 0,
         currency: config.currency || 'BDT',
         tran_id: config.tran_id || '',
@@ -110,8 +114,8 @@ export class SSLCommerzService {
     try {
       const result = await this.sslcommerz.validate({
         val_id: tran_id,
-        store_id: env.SSLCZ.STORE_ID(),
-        store_passwd: env.SSLCZ.STORE_PASSWD(),
+        store_id: process.env.SSLCZ_STORE_ID!,
+        store_passwd: process.env.SSLCZ_STORE_PASSWD!,
         format: 'json'
       });
       return result;
@@ -133,8 +137,8 @@ export class SSLCommerzService {
         refund_remarks,
         bank_tran_id,
         refe_id,
-        store_id: env.SSLCZ.STORE_ID(),
-        store_passwd: env.SSLCZ.STORE_PASSWD()
+        store_id: process.env.SSLCZ_STORE_ID!,
+        store_passwd: process.env.SSLCZ_STORE_PASSWD!
       });
       return result;
     } catch (error) {
