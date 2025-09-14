@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { XCircle, ArrowRight, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-export default function DonationFailedPage() {
+function DonationFailedContent() {
   const searchParams = useSearchParams();
   const [failureDetails, setFailureDetails] = useState<{
     tran_id: string | null;
@@ -97,5 +97,22 @@ export default function DonationFailedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DonationFailedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-red-950 dark:to-emerald-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-emerald-900 rounded-2xl shadow-xl p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DonationFailedContent />
+    </Suspense>
   );
 }

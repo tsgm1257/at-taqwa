@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
 
-export default function DonationSuccessPage() {
+function DonationSuccessContent() {
   const searchParams = useSearchParams();
   const [donationDetails, setDonationDetails] = useState<{
     tran_id: string | null;
@@ -14,37 +14,21 @@ export default function DonationSuccessPage() {
     tran_id: null,
     amount: null,
   });
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     try {
       console.log("Success page loaded, parsing search params...");
       const tran_id = searchParams.get("tran_id");
       const amount = searchParams.get("amount");
-
+      
       console.log("Parsed params:", { tran_id, amount });
       setDonationDetails({ tran_id, amount });
-      setIsLoading(false);
     } catch (error) {
       console.error("Error parsing search params:", error);
       // Set default values if there's an error
       setDonationDetails({ tran_id: null, amount: null });
-      setIsLoading(false);
     }
   }, [searchParams]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-emerald-900 rounded-2xl shadow-xl p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-950 flex items-center justify-center p-4">
@@ -116,5 +100,22 @@ export default function DonationSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DonationSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-emerald-900 rounded-2xl shadow-xl p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DonationSuccessContent />
+    </Suspense>
   );
 }

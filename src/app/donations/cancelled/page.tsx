@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
 
-export default function DonationCancelledPage() {
+function DonationCancelledContent() {
   const searchParams = useSearchParams();
   const [cancellationDetails, setCancellationDetails] = useState<{
     tran_id: string | null;
@@ -84,5 +84,22 @@ export default function DonationCancelledPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DonationCancelledPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-yellow-50 to-white dark:from-yellow-950 dark:to-emerald-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-emerald-900 rounded-2xl shadow-xl p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DonationCancelledContent />
+    </Suspense>
   );
 }
