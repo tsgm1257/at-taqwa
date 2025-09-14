@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       currency: currency || "NULL",
       value_a: value_a || "NULL",
       value_c: value_c || "NULL",
+      formDataEntries: Array.from(formData.entries())
     });
 
     // Validate the payment
@@ -92,6 +93,13 @@ export async function POST(req: NextRequest) {
           });
         } else {
           // Only fail if we don't have a valid callback status and val_id
+          console.error("Payment validation failed - insufficient callback data:", {
+            status,
+            val_id,
+            tran_id,
+            hasValidStatus: (status === "VALID" || status === "VALIDATED"),
+            hasValidId: val_id && val_id !== "null" && val_id !== ""
+          });
           const baseUrl = new URL(req.url).origin;
           return NextResponse.redirect(
             `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=validation_failed&callback_status=${status}&val_id=${val_id || 'null'}`
@@ -191,6 +199,13 @@ export async function POST(req: NextRequest) {
     }
 
     // If validation fails, redirect to failure page
+    console.error("Payment validation failed - final fallback:", {
+      status,
+      tran_id,
+      val_id,
+      validationResult,
+      reason: "validation_failed"
+    });
     const baseUrl = new URL(req.url).origin;
     const redirectUrl =
       tran_id && tran_id !== "null" && tran_id !== ""
