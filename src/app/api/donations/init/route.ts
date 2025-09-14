@@ -17,25 +17,33 @@ export const dynamic = "force-dynamic";
 import { donationInitSchema } from "@/lib/validators/donations";
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  const userId = (session?.user as any)?.id;
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
 
-  // Allow anonymous donations for quick donate functionality
-  // if (!userId) {
-  //   return NextResponse.json(
-  //     { ok: false, error: "Unauthorized" },
-  //     { status: 401 }
-  //   );
-  // }
+    // Allow anonymous donations for quick donate functionality
+    // if (!userId) {
+    //   return NextResponse.json(
+    //     { ok: false, error: "Unauthorized" },
+    //     { status: 401 }
+    //   );
+    // }
 
-  const body = await req.json().catch(() => null);
-  const parsed = donationInitSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: parsed.error.flatten() },
-      { status: 400 }
-    );
-  }
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const parsed = donationInitSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
 
   const { amount, currency, method, projectSlug, note, type, recurring } =
     parsed.data;
@@ -169,10 +177,26 @@ export async function POST(req: Request) {
     }
   }
 
-  // For other methods (bkash, nagad, cash), redirect to pending page
-  const redirectUrl = `/donations/pending/${doc._id}`;
-  return NextResponse.json(
-    { ok: true, id: String(doc._id), redirectUrl },
-    { status: 201 }
-  );
+    // For other methods (bkash, nagad, cash), redirect to pending page
+    const redirectUrl = `/donations/pending/${doc._id}`;
+    return NextResponse.json(
+      { ok: true, id: String(doc._id), redirectUrl },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Donation init error:", error);
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: "Internal server error",
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Global error handler to prevent empty responses
+export async function OPTIONS() {
+  return new Response(null, { status: 200 });
 }

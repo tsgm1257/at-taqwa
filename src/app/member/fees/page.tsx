@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   BarChart,
@@ -11,7 +11,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { CreditCard, CheckCircle, XCircle, Clock, Loader2, AlertCircle } from "lucide-react";
+import {
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
 type Fee = {
   _id: string;
@@ -21,7 +28,7 @@ type Fee = {
   paidAt?: string;
 };
 
-export default function MemberFeesPage() {
+function MemberFeesContent() {
   const searchParams = useSearchParams();
   const [year, setYear] = useState<string>(new Date().getFullYear().toString());
   const [items, setItems] = useState<Fee[]>([]);
@@ -31,7 +38,10 @@ export default function MemberFeesPage() {
   });
   const [loading, setLoading] = useState(true);
   const [payingFeeId, setPayingFeeId] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,56 +62,58 @@ export default function MemberFeesPage() {
 
   // Handle payment result messages from URL parameters
   useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
-    const feeId = searchParams.get('feeId');
-    const amount = searchParams.get('amount');
+    const success = searchParams.get("success");
+    const error = searchParams.get("error");
+    const feeId = searchParams.get("feeId");
+    const amount = searchParams.get("amount");
 
-    if (success === 'payment_completed' && feeId && amount) {
+    if (success === "payment_completed" && feeId && amount) {
       setMessage({
-        type: 'success',
-        text: `Payment of ${parseFloat(amount).toLocaleString()} BDT completed successfully!`
+        type: "success",
+        text: `Payment of ${parseFloat(
+          amount
+        ).toLocaleString()} BDT completed successfully!`,
       });
       // Clear URL parameters
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
       // Reload data to show updated status
       load();
-    } else if (success === 'already_paid') {
+    } else if (success === "already_paid") {
       setMessage({
-        type: 'success',
-        text: 'This fee was already paid successfully!'
+        type: "success",
+        text: "This fee was already paid successfully!",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'payment_failed') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error === "payment_failed") {
       setMessage({
-        type: 'error',
-        text: 'Payment failed. Please try again or contact support.'
+        type: "error",
+        text: "Payment failed. Please try again or contact support.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'payment_cancelled') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error === "payment_cancelled") {
       setMessage({
-        type: 'error',
-        text: 'Payment was cancelled. You can try again anytime.'
+        type: "error",
+        text: "Payment was cancelled. You can try again anytime.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'payment_invalid') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error === "payment_invalid") {
       setMessage({
-        type: 'error',
-        text: 'Payment was not valid. Please try again or contact support.'
+        type: "error",
+        text: "Payment was not valid. Please try again or contact support.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'invalid_callback') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error === "invalid_callback") {
       setMessage({
-        type: 'error',
-        text: 'Invalid payment callback. Please contact support.'
+        type: "error",
+        text: "Invalid payment callback. Please contact support.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'fee_not_found') {
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (error === "fee_not_found") {
       setMessage({
-        type: 'error',
-        text: 'Fee record not found. Please contact support.'
+        type: "error",
+        text: "Fee record not found. Please contact support.",
       });
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
     }
 
     // Auto-hide message after 5 seconds
@@ -136,7 +148,7 @@ export default function MemberFeesPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.ok && data.redirectUrl) {
         // Redirect to payment gateway
         window.location.href = data.redirectUrl;
@@ -197,13 +209,15 @@ export default function MemberFeesPage() {
 
       {/* Payment Result Messages */}
       {message && (
-        <div className={`mt-4 p-4 rounded-lg border ${
-          message.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
-            : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'
-        }`}>
+        <div
+          className={`mt-4 p-4 rounded-lg border ${
+            message.type === "success"
+              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300"
+              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            {message.type === 'success' ? (
+            {message.type === "success" ? (
               <CheckCircle className="h-5 w-5" />
             ) : (
               <AlertCircle className="h-5 w-5" />
@@ -255,9 +269,15 @@ export default function MemberFeesPage() {
                 {items.map((f) => (
                   <tr key={f._id}>
                     <td className="font-medium">{f.month}</td>
-                    <td className="font-semibold">{f.amount.toLocaleString()} BDT</td>
+                    <td className="font-semibold">
+                      {f.amount.toLocaleString()} BDT
+                    </td>
                     <td>
-                      <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(f.status)}`}>
+                      <div
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                          f.status
+                        )}`}
+                      >
                         {getStatusIcon(f.status)}
                         {f.status.charAt(0).toUpperCase() + f.status.slice(1)}
                       </div>
@@ -308,5 +328,15 @@ export default function MemberFeesPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function MemberFeesPage() {
+  return (
+    <Suspense
+      fallback={<div className="max-w-5xl mx-auto p-6">Loading...</div>}
+    >
+      <MemberFeesContent />
+    </Suspense>
   );
 }
