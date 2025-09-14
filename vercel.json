@@ -4,5 +4,11 @@
       "maxDuration": 30
     }
   },
-  "regions": ["bom1"]
+  "regions": ["bom1"],
+  "crons": [
+    {
+      "path": "/api/admin/fees/generate",
+      "schedule": "0 0 1 * *"
+    }
+  ]
 }

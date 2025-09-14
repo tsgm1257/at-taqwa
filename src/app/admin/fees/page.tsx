@@ -48,14 +48,6 @@ type Item = {
 };
 
 export default function AdminFeesPage() {
-  const [month, setMonth] = useState<string>(
-    new Date().toISOString().slice(0, 7)
-  ); // YYYY-MM
-  const [amount, setAmount] = useState<number>(200); // default fee
-  const [roles, setRoles] = useState<{ Admin: boolean; Member: boolean }>({
-    Admin: false,
-    Member: true,
-  });
 
   const [filterMonth, setFilterMonth] = useState<string>("");
   const [status, setStatus] = useState<string>("");
@@ -82,24 +74,21 @@ export default function AdminFeesPage() {
   }, [filterMonth, status, role]);
 
   const generate = async () => {
-    const chosenRoles = Object.entries(roles)
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-    if (chosenRoles.length === 0) return alert("Select at least one role");
-
     setGenerating(true);
-    const res = await fetch("/api/admin/fees/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ month, amount, roles: chosenRoles }),
-    });
-    const json = await res.json();
-    if (json.ok) {
-      alert(`Created: ${json.created} fees for ${json.month}`);
-      setFilterMonth(month);
-      load();
-    } else {
-      alert(json.error || "Failed to generate");
+    try {
+      const res = await fetch("/api/admin/fees/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (json.ok) {
+        alert(`Successfully generated ${json.summary.feesGenerated} fees for all approved members. Skipped ${json.summary.feesSkipped} existing fees.`);
+        load();
+      } else {
+        alert(json.error || "Failed to generate fees");
+      }
+    } catch (error) {
+      alert("Failed to generate fees. Please try again.");
     }
     setGenerating(false);
   };
@@ -290,74 +279,32 @@ export default function AdminFeesPage() {
               Generate Monthly Fees
             </h3>
           </div>
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-2">
-                Month
-              </label>
-              <input
-                type="month"
-                className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-2">
-                Amount (BDT)
-              </label>
-              <input
-                type="number"
-                className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-2">
-                Target Roles
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                    checked={roles.Member}
-                    onChange={(e) =>
-                      setRoles((r) => ({ ...r, Member: e.target.checked }))
-                    }
-                  />
-                  <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                    Members
-                  </span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                    checked={roles.Admin}
-                    onChange={(e) =>
-                      setRoles((r) => ({ ...r, Admin: e.target.checked }))
-                    }
-                  />
-                  <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                    Admins
-                  </span>
-                </label>
+              <p className="text-emerald-700 dark:text-emerald-300 mb-4">
+                This will automatically generate monthly fees for all approved members from their join date to the current month. 
+                Fees are set to <strong>100 BDT per month</strong> and will only be created for months that don't already have fees.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Automatic Generation</h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Monthly fees are automatically generated on the 1st of every month via Vercel cron job. 
+                  You can also manually trigger generation using the button below.
+                </p>
               </div>
             </div>
-            <div className="flex items-end">
+            <div className="flex items-center justify-center">
               <button
-                className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
                 onClick={generate}
                 disabled={generating}
               >
                 {generating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-5 w-5" />
                 )}
-                {generating ? "Generating..." : "Generate"}
+                {generating ? "Generating..." : "Generate All Missing Fees"}
               </button>
             </div>
           </div>
