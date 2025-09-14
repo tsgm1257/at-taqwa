@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/app/providers';
 
 export default function QuickDonate() {
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [customAmount, setCustomAmount] = useState('');
+  const [donationType, setDonationType] = useState('one_time'); // 'one_time' or 'recurring'
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);
@@ -18,6 +21,12 @@ export default function QuickDonate() {
   };
 
   const handleDonate = async () => {
+    // Check if recurring donation is selected
+    if (donationType === 'recurring') {
+      alert('Recurring donations will be implemented soon! Please select "One Time" for now.');
+      return;
+    }
+
     const amount = selectedAmount || parseFloat(customAmount);
     
     if (!amount || amount <= 0) {
@@ -78,6 +87,42 @@ export default function QuickDonate() {
             ৳{amt}
           </button>
         ))}
+      </div>
+
+      {/* Custom Amount Input */}
+      <div>
+        <input
+          type="number"
+          inputMode="decimal"
+          placeholder={t("custom_amount") || "Custom Amount"}
+          value={customAmount}
+          onChange={handleCustomAmountChange}
+          className="w-full rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 px-4 py-2 outline-none"
+        />
+      </div>
+
+      {/* One Time / Recurring Selection */}
+      <div className="grid grid-cols-2 gap-2">
+        <button 
+          onClick={() => setDonationType('one_time')}
+          className={`rounded-lg px-3 py-2 font-semibold transition ${
+            donationType === 'one_time'
+              ? 'bg-emerald-500 text-white'
+              : 'border border-emerald-300/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+          }`}
+        >
+          {t("one_time") || "One Time"}
+        </button>
+        <button 
+          onClick={() => setDonationType('recurring')}
+          className={`rounded-lg px-3 py-2 font-semibold transition ${
+            donationType === 'recurring'
+              ? 'bg-emerald-500 text-white'
+              : 'border border-emerald-300/60 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+          }`}
+        >
+          {t("recurring") || "Recurring"}
+        </button>
       </div>
       
       <div className="grid grid-cols-2 gap-2">

@@ -177,27 +177,8 @@ export default function HomeSection() {
                 <QuickDonate />
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <button className="rounded-lg border border-emerald-300/60 px-3 py-2 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
-                  {t("one_time")}
-                </button>
-                <button className="rounded-lg border border-emerald-300/60 px-3 py-2 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
-                  {t("recurring")}
-                </button>
-              </div>
-
               <div className="mt-4">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder={t("custom_amount")}
-                  className="w-full rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 px-4 py-2 outline-none"
-                  onChange={(e) => {
-                    // This will be handled by the QuickDonate component
-                    // For now, we'll keep the input for visual consistency
-                  }}
-                />
-                <div className="mt-2 text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
+                <div className="text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
                   {t("receipt_line")}
                 </div>
               </div>
