@@ -58,8 +58,29 @@ export async function POST(req: Request) {
   // Handle SSLCommerz integration
   if (method === "sslcommerz") {
     try {
+      // Check if SSLCommerz credentials are configured
+      const storeId = process.env.SSLCZ_STORE_ID;
+      const storePasswd = process.env.SSLCZ_STORE_PASSWD;
+      
+      if (!storeId || !storePasswd || storeId === "your_store_id_here") {
+        console.log("SSLCommerz credentials not configured, falling back to pending page");
+        return NextResponse.json({
+          ok: true,
+          id: String(doc._id),
+          redirectUrl: `/donations/pending/${doc._id}`,
+          error: "SSLCommerz credentials not configured. Please set SSLCZ_STORE_ID and SSLCZ_STORE_PASSWD in .env.local",
+        });
+      }
+
       const baseUrl = env.NEXTAUTH_URL();
       const tran_id = `DON_${doc._id}_${Date.now()}`;
+      
+      console.log("Initiating SSLCommerz payment with config:", {
+        storeId: storeId.substring(0, 4) + "***",
+        amount,
+        tran_id,
+        baseUrl
+      });
       
       const paymentConfig = {
         total_amount: amount,

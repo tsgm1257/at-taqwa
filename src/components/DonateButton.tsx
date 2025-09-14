@@ -22,8 +22,13 @@ export default function DonateButton({ projectSlug }: { projectSlug?: string }) 
       if (!json.ok) throw new Error(typeof json.error === "string" ? json.error : "Failed");
       
       if (json.redirectUrl) {
-        // Redirect to payment gateway or success page
-        window.location.href = json.redirectUrl;
+        // Check if it's an error message about missing credentials
+        if (json.error && json.error.includes("credentials not configured")) {
+          setMsg(`⚠️ ${json.error}`);
+        } else {
+          // Redirect to payment gateway or success page
+          window.location.href = json.redirectUrl;
+        }
       } else {
         setMsg(`Donation created. ID: ${json.id}`);
       }
