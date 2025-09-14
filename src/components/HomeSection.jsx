@@ -188,10 +188,14 @@ export default function HomeSection() {
 
               <div className="mt-4">
                 <input
-                  type="text"
+                  type="number"
                   inputMode="decimal"
                   placeholder={t("custom_amount")}
                   className="w-full rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 px-4 py-2 outline-none"
+                  onChange={(e) => {
+                    // This will be handled by the QuickDonate component
+                    // For now, we'll keep the input for visual consistency
+                  }}
                 />
                 <div className="mt-2 text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
                   {t("receipt_line")}
@@ -323,7 +327,7 @@ export default function HomeSection() {
                         Income
                       </div>
                       <div className="font-semibold">
-                        BDT {latestReport.income?.toLocaleString() || 0}
+                        BDT {latestReport.totalIncome?.toLocaleString() || 0}
                       </div>
                     </div>
                     <div>
@@ -331,7 +335,7 @@ export default function HomeSection() {
                         Expenses
                       </div>
                       <div className="font-semibold">
-                        BDT {latestReport.expenses?.toLocaleString() || 0}
+                        BDT {latestReport.totalExpense?.toLocaleString() || 0}
                       </div>
                     </div>
                   </div>
