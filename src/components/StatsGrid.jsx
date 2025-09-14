@@ -14,6 +14,11 @@ export default function StatsGrid({ items = [] }) {
           <div className="text-xs text-emerald-700/70 dark:text-emerald-200/70">
             {s.label}
           </div>
+          {s.subtitle && (
+            <div className="text-xs text-emerald-600/60 dark:text-emerald-300/60 mt-1">
+              {s.subtitle}
+            </div>
+          )}
         </div>
       ))}
     </div>

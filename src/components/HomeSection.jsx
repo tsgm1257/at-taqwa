@@ -93,7 +93,13 @@ export default function HomeSection() {
         setStats([
           { label: "Active Members", value: statsData.activeMembers },
           { label: "Donors This Month", value: statsData.donorsThisMonth },
-          { label: "Funds Raised (BDT)", value: statsData.totalRaised },
+          { 
+            label: "Total Raised (BDT)", 
+            value: statsData.totalRaised,
+            subtitle: statsData.totalDonations && statsData.totalFeesPaid ? 
+              `Donations: ৳${statsData.totalDonations.toLocaleString()} | Fees: ৳${statsData.totalFeesPaid.toLocaleString()}` : 
+              undefined
+          },
           { label: "Active Projects", value: statsData.activeProjects },
         ]);
       } catch (error) {
