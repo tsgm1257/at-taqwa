@@ -5,6 +5,8 @@ import Announcement from "@/models/Announcement";
 import { z } from "zod";
 import { Types } from "mongoose";
 
+export const dynamic = 'force-dynamic';
+
 const updateAnnouncementSchema = z.object({
   title: z.string().min(1).optional(),
   body: z.string().min(1).optional(),

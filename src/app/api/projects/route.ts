@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import Project from "@/models/Project";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   await dbConnect();
   const { searchParams } = new URL(req.url);

@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import Announcement from "@/models/Announcement";
 import { z } from "zod";
 
+export const dynamic = 'force-dynamic';
+
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   body: z.string().min(1, "Content is required"),
