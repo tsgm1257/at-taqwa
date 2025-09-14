@@ -16,7 +16,7 @@ type Project = {
   slug: string;
   description: string;
   targetAmount: number;
-  raisedAmount: number;
+  currentAmount: number;
   coverImageUrl?: string;
   status: "active" | "completed" | "paused";
   startDate?: string;
@@ -162,7 +162,7 @@ export default function ProjectsPage() {
                 ? Math.min(
                     100,
                     Math.round(
-                      (project.raisedAmount / project.targetAmount) * 100
+                      (project.currentAmount / project.targetAmount) * 100
                     )
                   )
                 : 0;
@@ -194,7 +194,7 @@ export default function ProjectsPage() {
                       {getStatusText(project.status)}
                     </span>
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-200">
-                      BDT {project.raisedAmount.toLocaleString()} /{" "}
+                      BDT {project.currentAmount.toLocaleString()} /{" "}
                       {project.targetAmount.toLocaleString()}
                     </span>
                   </div>

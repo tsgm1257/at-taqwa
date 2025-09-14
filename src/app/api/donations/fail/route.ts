@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    
+
     const formData = await req.formData();
     const {
       status,
@@ -25,19 +25,24 @@ export async function POST(req: NextRequest) {
           failure_reason: error || "Payment failed",
           ssl_status: status,
           ssl_tran_id: tran_id,
-        }
+        },
       });
     }
 
     // Redirect to failure page
-    return NextResponse.redirect(
-      new URL(`/donations/failed?tran_id=${tran_id}&reason=${error || "payment_failed"}`, req.url)
-    );
-
+    const baseUrl = new URL(req.url).origin;
+    const redirectUrl =
+      tran_id && tran_id !== "null" && tran_id !== ""
+        ? `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=${
+            error || "payment_failed"
+          }`
+        : `${baseUrl}/donations/failed?reason=${error || "payment_failed"}`;
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error("SSLCommerz fail callback error:", error);
+    const baseUrl = new URL(req.url).origin;
     return NextResponse.redirect(
-      new URL("/donations/failed?reason=server_error", req.url)
+      `${baseUrl}/donations/failed?reason=server_error`
     );
   }
 }
@@ -48,7 +53,12 @@ export async function GET(req: NextRequest) {
   const tran_id = searchParams.get("tran_id");
   const reason = searchParams.get("reason");
 
-  return NextResponse.redirect(
-    new URL(`/donations/failed?tran_id=${tran_id}&reason=${reason || "payment_failed"}`, req.url)
-  );
+  const baseUrl = new URL(req.url).origin;
+  const redirectUrl =
+    tran_id && tran_id !== "null" && tran_id !== ""
+      ? `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=${
+          reason || "payment_failed"
+        }`
+      : `${baseUrl}/donations/failed?reason=${reason || "payment_failed"}`;
+  return NextResponse.redirect(redirectUrl);
 }

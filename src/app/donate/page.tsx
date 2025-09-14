@@ -26,7 +26,7 @@ type Project = {
   slug: string;
   description: string;
   targetAmount: number;
-  raisedAmount: number;
+  currentAmount: number;
   status: "active" | "completed" | "paused";
 };
 
@@ -86,10 +86,12 @@ export default function DonatePage() {
         throw new Error(json.error || t("donate.failedToProcessDonation"));
       }
 
-      setMessage(`Donation initiated successfully! ID: ${json.id}`);
-
-      // In a real implementation, redirect to payment gateway
-      // window.location.href = json.redirectUrl;
+      if (json.redirectUrl) {
+        // Redirect to payment gateway
+        window.location.href = json.redirectUrl;
+      } else {
+        setMessage(`Donation initiated successfully! ID: ${json.id}`);
+      }
     } catch (error) {
       setMessage(
         error instanceof Error

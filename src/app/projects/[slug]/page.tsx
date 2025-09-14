@@ -34,9 +34,10 @@ type Project = {
 export default function ProjectDetail({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
   const { t } = useLanguage();
+  const resolvedParams = React.use(params);
   const [project, setProject] = React.useState<Project | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -45,7 +46,7 @@ export default function ProjectDetail({
     const fetchProject = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/projects/${params.slug}`);
+        const res = await fetch(`/api/projects/${resolvedParams.slug}`);
         if (!res.ok) {
           throw new Error(t("projectDetail.projectNotFound"));
         }
@@ -64,7 +65,7 @@ export default function ProjectDetail({
     };
 
     fetchProject();
-  }, [params.slug]);
+  }, [resolvedParams.slug, t]);
 
   if (loading) {
     return (

@@ -14,13 +14,37 @@ export default function DonationSuccessPage() {
     tran_id: null,
     amount: null,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const tran_id = searchParams.get("tran_id");
-    const amount = searchParams.get("amount");
-    
-    setDonationDetails({ tran_id, amount });
+    try {
+      console.log("Success page loaded, parsing search params...");
+      const tran_id = searchParams.get("tran_id");
+      const amount = searchParams.get("amount");
+
+      console.log("Parsed params:", { tran_id, amount });
+      setDonationDetails({ tran_id, amount });
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error parsing search params:", error);
+      // Set default values if there's an error
+      setDonationDetails({ tran_id: null, amount: null });
+      setIsLoading(false);
+    }
   }, [searchParams]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-emerald-900 rounded-2xl shadow-xl p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-950 flex items-center justify-center p-4">
@@ -35,9 +59,10 @@ export default function DonationSuccessPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Payment Successful!
           </h1>
-          
+
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Thank you for your generous donation. Your contribution will help make a difference in our community.
+            Thank you for your generous donation. Your contribution will help
+            make a difference in our community.
           </p>
 
           {/* Transaction Details */}
@@ -46,12 +71,16 @@ export default function DonationSuccessPage() {
               <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                 <div className="flex justify-between">
                   <span>Transaction ID:</span>
-                  <span className="font-mono text-xs">{donationDetails.tran_id}</span>
+                  <span className="font-mono text-xs">
+                    {donationDetails.tran_id}
+                  </span>
                 </div>
                 {donationDetails.amount && (
                   <div className="flex justify-between">
                     <span>Amount:</span>
-                    <span className="font-semibold">৳{donationDetails.amount}</span>
+                    <span className="font-semibold">
+                      ৳{donationDetails.amount}
+                    </span>
                   </div>
                 )}
               </div>
@@ -67,7 +96,7 @@ export default function DonationSuccessPage() {
               Make Another Donation
               <ArrowRight className="w-4 h-4" />
             </Link>
-            
+
             <Link
               href="/"
               className="w-full bg-gray-100 hover:bg-gray-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
@@ -80,7 +109,8 @@ export default function DonationSuccessPage() {
           {/* Additional Info */}
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-emerald-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              You will receive a confirmation email shortly. If you have any questions, please contact our support team.
+              You will receive a confirmation email shortly. If you have any
+              questions, please contact our support team.
             </p>
           </div>
         </div>

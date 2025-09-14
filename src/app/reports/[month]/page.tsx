@@ -31,16 +31,17 @@ type Report = {
 export default function ReportDetail({
   params,
 }: {
-  params: { month: string };
+  params: Promise<{ month: string }>;
 }) {
   const { t } = useLanguage();
+  const resolvedParams = React.use(params);
   const [report, setReport] = React.useState<Report | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchReport = async () => {
       try {
-        const res = await fetch(`/api/reports/${params.month}`);
+        const res = await fetch(`/api/reports/${resolvedParams.month}`);
         if (!res.ok) {
           setReport(null);
           return;
@@ -56,7 +57,7 @@ export default function ReportDetail({
     };
 
     fetchReport();
-  }, [params.month]);
+  }, [resolvedParams.month]);
 
   if (loading) {
     return <div className="max-w-4xl mx-auto p-6">{t("common.loading")}</div>;

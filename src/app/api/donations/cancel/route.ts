@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    
+
     const formData = await req.formData();
     const {
       status,
@@ -24,19 +24,22 @@ export async function POST(req: NextRequest) {
           failure_reason: "Payment cancelled by user",
           ssl_status: status,
           ssl_tran_id: tran_id,
-        }
+        },
       });
     }
 
     // Redirect to cancellation page
-    return NextResponse.redirect(
-      new URL(`/donations/cancelled?tran_id=${tran_id}`, req.url)
-    );
-
+    const baseUrl = new URL(req.url).origin;
+    const redirectUrl =
+      tran_id && tran_id !== "null" && tran_id !== ""
+        ? `${baseUrl}/donations/cancelled?tran_id=${tran_id}`
+        : `${baseUrl}/donations/cancelled`;
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error("SSLCommerz cancel callback error:", error);
+    const baseUrl = new URL(req.url).origin;
     return NextResponse.redirect(
-      new URL("/donations/cancelled?reason=server_error", req.url)
+      `${baseUrl}/donations/cancelled?reason=server_error`
     );
   }
 }
@@ -46,7 +49,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const tran_id = searchParams.get("tran_id");
 
-  return NextResponse.redirect(
-    new URL(`/donations/cancelled?tran_id=${tran_id || ""}`, req.url)
-  );
+  const baseUrl = new URL(req.url).origin;
+  const redirectUrl =
+    tran_id && tran_id !== "null" && tran_id !== ""
+      ? `${baseUrl}/donations/cancelled?tran_id=${tran_id}`
+      : `${baseUrl}/donations/cancelled`;
+  return NextResponse.redirect(redirectUrl);
 }

@@ -91,10 +91,10 @@ export async function POST(req: Request) {
       meta: { note, createdBy: session?.user?.email },
     });
 
-    // Update project raisedAmount if donation linked to a project
+    // Update project currentAmount if donation linked to a project
     if (resolvedProjectId) {
       await Project.findByIdAndUpdate(resolvedProjectId, {
-        $inc: { raisedAmount: amount },
+        $inc: { currentAmount: amount },
       });
     }
 

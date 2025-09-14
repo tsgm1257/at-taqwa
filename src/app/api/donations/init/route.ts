@@ -6,10 +6,10 @@ import Donation from "@/models/Donation";
 import Project from "@/models/Project";
 import { sslcommerzDirectService } from "@/lib/sslcommerz-direct";
 import { env } from "@/lib/env";
-import fetch from 'node-fetch';
+import fetch from "node-fetch";
 
 // Polyfill fetch for Node.js environment
-if (typeof globalThis.fetch === 'undefined') {
+if (typeof globalThis.fetch === "undefined") {
   globalThis.fetch = fetch as any;
 }
 
@@ -35,7 +35,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const { amount, currency, method, projectSlug, note } = parsed.data;
+  const { amount, currency, method, projectSlug, note, type, recurring } =
+    parsed.data;
 
   await dbConnect();
 
@@ -58,7 +59,11 @@ export async function POST(req: Request) {
     currency: currency || "BDT",
     method, // sslcommerz | bkash | nagad (not integrated yet)
     status: "initiated",
-    meta: { note },
+    meta: {
+      note,
+      type: type || "general",
+      recurring: recurring || false,
+    },
   });
 
   // Handle SSLCommerz integration
@@ -67,27 +72,31 @@ export async function POST(req: Request) {
       // Check if SSLCommerz credentials are configured
       const storeId = process.env.SSLCZ_STORE_ID;
       const storePasswd = process.env.SSLCZ_STORE_PASSWD;
-      
+
       if (!storeId || !storePasswd || storeId === "your_store_id_here") {
-        console.log("SSLCommerz credentials not configured, falling back to pending page");
+        console.log(
+          "SSLCommerz credentials not configured, falling back to pending page"
+        );
         return NextResponse.json({
           ok: true,
           id: String(doc._id),
           redirectUrl: `/donations/pending/${doc._id}`,
-          error: "SSLCommerz credentials not configured. Please set SSLCZ_STORE_ID and SSLCZ_STORE_PASSWD in .env.local",
+          error:
+            "SSLCommerz credentials not configured. Please set SSLCZ_STORE_ID and SSLCZ_STORE_PASSWD in .env.local",
         });
       }
 
       const baseUrl = env.NEXTAUTH_URL();
       const tran_id = `DON_${doc._id}_${Date.now()}`;
-      
+
       console.log("Initiating SSLCommerz payment with config:", {
         storeId: storeId.substring(0, 4) + "***",
         amount,
         tran_id,
-        baseUrl
+        baseUrl,
+        projectId: projectId ? "present" : "not present",
       });
-      
+
       const paymentConfig = {
         total_amount: amount,
         currency: currency || "BDT",
@@ -113,26 +122,28 @@ export async function POST(req: Request) {
         total_amount: paymentConfig.total_amount,
         currency: paymentConfig.currency,
         tran_id: paymentConfig.tran_id,
-        store_id: storeId.substring(0, 4) + "***"
+        store_id: storeId.substring(0, 4) + "***",
       });
 
-      const sslResult = await sslcommerzDirectService.initiatePayment(paymentConfig);
-      
+      const sslResult = await sslcommerzDirectService.initiatePayment(
+        paymentConfig
+      );
+
       console.log("SSLCommerz response:", {
         status: sslResult.status,
         gatewayUrl: sslResult.GatewayPageURL ? "Generated" : "Not generated",
-        failedreason: sslResult.failedreason
+        failedreason: sslResult.failedreason,
       });
-      
+
       if (sslResult.status === "SUCCESS" && sslResult.GatewayPageURL) {
         // Update donation with transaction ID
         await Donation.findByIdAndUpdate(doc._id, {
-          meta: { 
+          meta: {
             ...doc.meta,
             tran_id,
             ssl_sessionkey: sslResult.sessionkey,
-            ssl_gw: sslResult.gw
-          }
+            ssl_gw: sslResult.gw,
+          },
         });
 
         return NextResponse.json({
