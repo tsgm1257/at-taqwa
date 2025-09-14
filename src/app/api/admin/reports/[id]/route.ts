@@ -5,7 +5,7 @@ import { dbConnect } from "@/lib/db";
 import Report from "@/models/Report";
 import { reportUpdateSchema } from "@/lib/validators/reports";
 
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
     return NextResponse.json(
@@ -14,7 +14,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     );
   }
   await dbConnect();
-  const item = await Report.findById(params.id).lean();
+  const { id } = await params;
+  const item = await Report.findById(id).lean();
   if (!item)
     return NextResponse.json(
       { ok: false, error: "Not found" },
@@ -25,7 +26,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
@@ -45,11 +46,12 @@ export async function PATCH(
   }
 
   await dbConnect();
+  const { id } = await params;
 
   if (parsed.data.month) {
     const exists = await Report.findOne({
       month: parsed.data.month,
-      _id: { $ne: params.id },
+      _id: { $ne: id },
     }).lean();
     if (exists) {
       return NextResponse.json(
@@ -60,7 +62,7 @@ export async function PATCH(
   }
 
   // use doc.save() so pre-save totals recalc fires
-  const doc = await Report.findById(params.id);
+  const doc = await Report.findById(id);
   if (!doc)
     return NextResponse.json(
       { ok: false, error: "Not found" },
@@ -85,7 +87,7 @@ export async function PATCH(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
@@ -96,7 +98,8 @@ export async function DELETE(
   }
 
   await dbConnect();
-  const item = await Report.findByIdAndDelete(params.id);
+  const { id } = await params;
+  const item = await Report.findByIdAndDelete(id);
   if (!item) {
     return NextResponse.json(
       { ok: false, error: "Not found" },

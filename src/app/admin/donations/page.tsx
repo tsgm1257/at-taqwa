@@ -278,7 +278,7 @@ export default function AdminDonationsPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    label={({ method, count }) => `${method}: ${count}`}
+                    label={({ method, count }: any) => `${method}: ${count}`}
                   >
                     {methodData.map((entry, index) => (
                       <Cell

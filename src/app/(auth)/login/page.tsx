@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -40,7 +40,7 @@ const registerSchema = z.object({
 type SignInData = z.infer<typeof signInSchema>;
 type RegisterData = z.infer<typeof registerSchema>;
 
-export default function AuthPage() {
+function AuthPageContent() {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -137,7 +137,7 @@ export default function AuthPage() {
       <AnnouncementMarquee />
 
       {/* Hero Section */}
-      <Section className="pt-10 pb-8">
+      <Section id="hero" className="pt-10 pb-8">
         <div className="text-center max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -176,7 +176,7 @@ export default function AuthPage() {
       </Section>
 
       {/* Auth Forms */}
-      <Section className="py-8">
+      <Section id="auth-forms" className="py-8">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -437,7 +437,7 @@ export default function AuthPage() {
       </Section>
 
       {/* Call to Action */}
-      <Section className="py-12">
+      <Section id="cta" className="py-12">
         <div className="rounded-3xl border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-8 text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
             {t("auth.readyToMakeDifference")}
@@ -462,5 +462,13 @@ export default function AuthPage() {
         </div>
       </Section>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthPageContent />
+    </Suspense>
   );
 }

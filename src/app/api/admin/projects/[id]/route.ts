@@ -8,7 +8,7 @@ import { slugify } from "@/lib/slug";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if ((session?.user as { role?: string })?.role !== "Admin") {
@@ -28,6 +28,7 @@ export async function PATCH(
   }
 
   await dbConnect();
+  const { id } = await params;
 
   // Build update object, converting dates and generating slug if needed
   const update: Record<string, unknown> = { ...parsed.data };
@@ -47,7 +48,7 @@ export async function PATCH(
     update.slug = slugify(parsed.data.title);
   }
 
-  const item = await Project.findByIdAndUpdate(params.id, update, {
+  const item = await Project.findByIdAndUpdate(id, update, {
     new: true,
   });
   if (!item)
@@ -61,7 +62,7 @@ export async function PATCH(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if ((session?.user as { role?: string })?.role !== "Admin") {
@@ -72,7 +73,8 @@ export async function DELETE(
   }
 
   await dbConnect();
-  const res = await Project.findByIdAndDelete(params.id);
+  const { id } = await params;
+  const res = await Project.findByIdAndDelete(id);
   if (!res)
     return NextResponse.json(
       { ok: false, error: "Not found" },

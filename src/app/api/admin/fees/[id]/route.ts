@@ -7,7 +7,7 @@ import { adminFeeUpdateSchema } from "@/lib/validators/fees";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user && "role" in session.user) ? (session.user as { role?: string }).role : undefined;
@@ -28,7 +28,8 @@ export async function PATCH(
   }
 
   await dbConnect();
-  const doc = await Fee.findById(params.id);
+  const { id } = await params;
+  const doc = await Fee.findById(id);
   if (!doc)
     return NextResponse.json(
       { ok: false, error: "Not found" },

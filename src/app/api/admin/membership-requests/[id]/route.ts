@@ -6,7 +6,7 @@ import MembershipRequest from "@/models/MembershipRequest";
 import User from "@/models/User";
 import { membershipModerateSchema } from "@/lib/validators/membership";
 
-export async function PATCH(_req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user && "role" in session.user) ? (session.user as { role?: string }).role : undefined;
   if (userRole !== "Admin") {
@@ -22,8 +22,9 @@ export async function PATCH(_req: Request, { params }: { params: { id: string } 
 
     const { action } = parsed.data;
     await dbConnect();
+    const { id } = await params;
 
-    const reqDoc = await MembershipRequest.findById(params.id);
+    const reqDoc = await MembershipRequest.findById(id);
     if (!reqDoc) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
     if (reqDoc.status !== "pending") {
       return NextResponse.json({ ok: false, error: "Already reviewed" }, { status: 409 });

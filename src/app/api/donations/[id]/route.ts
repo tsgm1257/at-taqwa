@@ -6,7 +6,7 @@ import Donation from "@/models/Donation";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
@@ -19,9 +19,10 @@ export async function GET(
   }
 
   await dbConnect();
+  const { id } = await params;
 
   try {
-    const donation = await Donation.findById(params.id)
+    const donation = await Donation.findById(id)
       .populate("projectId", "title slug")
       .lean();
 

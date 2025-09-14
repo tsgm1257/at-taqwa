@@ -16,7 +16,7 @@ const updateAnnouncementSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,14 +25,16 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    const { id } = await params;
+
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
       );
     }
 
-    const announcement = await Announcement.findById(params.id).lean();
+    const announcement = await Announcement.findById(id).lean();
 
     if (!announcement) {
       return NextResponse.json(
@@ -56,7 +58,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -65,7 +67,9 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    const { id } = await params;
+
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
@@ -89,7 +93,7 @@ export async function PUT(
     }
 
     const announcement = await Announcement.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -116,7 +120,7 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -125,7 +129,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    const { id } = await params;
+
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
@@ -149,7 +155,7 @@ export async function PATCH(
     }
 
     const announcement = await Announcement.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -176,7 +182,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -185,14 +191,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    const { id } = await params;
+
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
       );
     }
 
-    const announcement = await Announcement.findByIdAndDelete(params.id);
+    const announcement = await Announcement.findByIdAndDelete(id);
 
     if (!announcement) {
       return NextResponse.json(
