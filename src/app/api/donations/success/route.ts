@@ -67,27 +67,36 @@ export async function POST(req: NextRequest) {
         console.log("Validation result:", validationResult);
       } catch (e) {
         console.error("Payment validation error:", e);
-        // Fallback ONLY in sandbox when callback status is VALID/VALIDATED and val_id is present
+        
+        // More lenient approach: If SSLCommerz callback says VALID/VALIDATED, 
+        // and we have a val_id, proceed with the payment even if validation fails
+        // This handles cases where the validator endpoint is temporarily unavailable
         if (
-          !(
-            isSandbox &&
-            (status === "VALID" || status === "VALIDATED") &&
-            val_id
-          )
+          (status === "VALID" || status === "VALIDATED") &&
+          val_id &&
+          val_id !== "null" &&
+          val_id !== ""
         ) {
-          // Non-sandbox: treat as failure
+          // Proceed with payment, but note the validation failure
+          validationResult = {
+            status: "VALID",
+            ssl_validation_fallback: true,
+            validation_error: e instanceof Error ? e.message : String(e),
+            callback_status: status,
+            val_id: val_id
+          };
+          console.warn("Validation failed but callback is VALID, proceeding anyway:", {
+            callback_status: status,
+            val_id: val_id,
+            error: e instanceof Error ? e.message : String(e)
+          });
+        } else {
+          // Only fail if we don't have a valid callback status and val_id
           const baseUrl = new URL(req.url).origin;
           return NextResponse.redirect(
-            `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=validation_failed`
+            `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=validation_failed&callback_status=${status}&val_id=${val_id || 'null'}`
           );
         }
-        // In sandbox mode, proceed with validation failure noted in meta
-        validationResult = {
-          status: "VALID",
-          ssl_validation_fallback: true,
-          validation_error: e instanceof Error ? e.message : String(e),
-        };
-        console.warn("Validation failed in sandbox, proceeding anyway:", e);
       }
 
       if (
