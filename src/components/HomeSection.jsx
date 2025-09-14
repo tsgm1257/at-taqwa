@@ -443,33 +443,6 @@ export default function HomeSection() {
         </div>
       </Section>
 
-      <footer className="border-t border-emerald-200/60 dark:border-emerald-800/60 py-8">
-        <Section className="text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            © {new Date().getFullYear()} {t("brand")} • {t("footer_rights")}
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/privacy"
-              className="hover:text-emerald-600 dark:hover:text-emerald-300"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/terms"
-              className="hover:text-emerald-600 dark:hover:text-emerald-300"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/contact"
-              className="hover:text-emerald-600 dark:hover:text-emerald-300"
-            >
-              Contact
-            </Link>
-          </div>
-        </Section>
-      </footer>
     </div>
   );
 }
