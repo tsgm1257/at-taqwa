@@ -20,7 +20,7 @@ export default function Footer() {
     <footer className="footer footer-center p-10 bg-base-200 text-base-content">
       <div className="container mx-auto px-4 lg:px-8">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Organization Info */}
           <div className="text-center md:text-left">
             <h3 className="footer-title text-lg font-bold text-primary">
@@ -47,31 +47,6 @@ export default function Footer() {
               </Link>
               <Link href="/reports" className="link link-hover text-sm">
                 {t("nav.reports")}
-              </Link>
-            </div>
-          </div>
-
-          {/* Member Services */}
-          <div className="text-center md:text-left">
-            <h3 className="footer-title text-lg font-bold">Member Services</h3>
-            <div className="flex flex-col gap-2 mt-2">
-              <Link
-                href="/membership/apply"
-                className="link link-hover text-sm"
-              >
-                Join Our Community
-              </Link>
-              <Link
-                href="/member/donations"
-                className="link link-hover text-sm"
-              >
-                My Donations
-              </Link>
-              <Link href="/member/fees" className="link link-hover text-sm">
-                Monthly Fees
-              </Link>
-              <Link href="/member/profile" className="link link-hover text-sm">
-                My Profile
               </Link>
             </div>
           </div>
