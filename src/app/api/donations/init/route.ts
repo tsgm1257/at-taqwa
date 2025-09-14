@@ -6,6 +6,12 @@ import Donation from "@/models/Donation";
 import Project from "@/models/Project";
 import { sslcommerzService } from "@/lib/sslcommerz";
 import { env } from "@/lib/env";
+import fetch from 'node-fetch';
+
+// Polyfill fetch for Node.js environment
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = fetch as any;
+}
 
 export const dynamic = "force-dynamic";
 import { donationInitSchema } from "@/lib/validators/donations";

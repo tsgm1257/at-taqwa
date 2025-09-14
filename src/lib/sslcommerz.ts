@@ -1,5 +1,11 @@
 import SSLCommerzPayment from 'sslcommerz-lts';
 import { env } from './env';
+import fetch from 'node-fetch';
+
+// Polyfill fetch for Node.js environment
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = fetch as any;
+}
 
 export interface SSLCommerzConfig {
   store_id: string;

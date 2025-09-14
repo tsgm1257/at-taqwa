@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { sslcommerzService } from "@/lib/sslcommerz";
+import fetch from 'node-fetch';
+
+// Polyfill fetch for Node.js environment
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = fetch as any;
+}
 
 export const dynamic = "force-dynamic";
 
