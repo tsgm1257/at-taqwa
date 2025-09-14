@@ -61,7 +61,7 @@ export default function DonatePage() {
   const handleDonate = async () => {
     const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
     if (!amount || amount < 1) {
-      setMessage("Please enter a valid amount");
+      setMessage(t("donate.pleaseEnterValidAmount"));
       return;
     }
 
@@ -83,7 +83,7 @@ export default function DonatePage() {
 
       const json = await res.json();
       if (!json.ok) {
-        throw new Error(json.error || "Failed to process donation");
+        throw new Error(json.error || t("donate.failedToProcessDonation"));
       }
 
       setMessage(`Donation initiated successfully! ID: ${json.id}`);
@@ -92,7 +92,9 @@ export default function DonatePage() {
       // window.location.href = json.redirectUrl;
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "Failed to process donation"
+        error instanceof Error
+          ? error.message
+          : t("donate.failedToProcessDonation")
       );
     } finally {
       setLoading(false);
@@ -117,13 +119,13 @@ export default function DonatePage() {
   const getPaymentLabel = (method: string) => {
     switch (method) {
       case "sslcommerz":
-        return "Credit/Debit Card";
+        return t("donate.creditDebitCard");
       case "bkash":
-        return "bKash";
+        return t("donate.bkash");
       case "nagad":
-        return "Nagad";
+        return t("donate.nagad");
       case "cash":
-        return "Cash/Offline";
+        return t("donate.cashOffline");
       default:
         return method;
     }
@@ -194,9 +196,17 @@ export default function DonatePage() {
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { value: "general", label: "General", icon: Heart },
-                    { value: "zakat", label: "Zakat", icon: Target },
-                    { value: "sadaqah", label: "Sadaqah", icon: HandCoins },
+                    {
+                      value: "general",
+                      label: t("donate.general"),
+                      icon: Heart,
+                    },
+                    { value: "zakat", label: t("donate.zakat"), icon: Target },
+                    {
+                      value: "sadaqah",
+                      label: t("donate.sadaqah"),
+                      icon: HandCoins,
+                    },
                   ].map(({ value, label, icon: Icon }) => (
                     <button
                       key={value}
@@ -239,7 +249,7 @@ export default function DonatePage() {
                 </div>
                 <input
                   type="number"
-                  placeholder="Enter custom amount"
+                  placeholder={t("donate.enterCustomAmount")}
                   value={customAmount}
                   onChange={(e) => {
                     setCustomAmount(e.target.value);
@@ -279,12 +289,20 @@ export default function DonatePage() {
                   {[
                     {
                       value: "sslcommerz",
-                      label: "Credit/Debit Card",
+                      label: t("donate.creditDebitCard"),
                       icon: CreditCard,
                     },
                     { value: "bkash", label: "bKash", icon: Smartphone },
-                    { value: "nagad", label: "Nagad", icon: Smartphone },
-                    { value: "cash", label: "Cash/Offline", icon: Banknote },
+                    {
+                      value: "nagad",
+                      label: t("donate.nagad"),
+                      icon: Smartphone,
+                    },
+                    {
+                      value: "cash",
+                      label: t("donate.cashOffline"),
+                      icon: Banknote,
+                    },
                   ].map(({ value, label, icon: Icon }) => (
                     <button
                       key={value}

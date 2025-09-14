@@ -7,36 +7,43 @@ import { User, CreditCard, Heart, Bell, ArrowRight } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
-import DonationHistory from "@/components/DonationHistory";
-import MonthlyFees from "@/components/MonthlyFees";
+import { useLanguage } from "@/app/providers";
+type Fee = {
+  _id: string;
+  status: "unpaid" | "partial" | "paid" | "waived";
+};
 
 export default function MemberDashboard() {
+  const { t } = useLanguage();
   const [donations, setDonations] = React.useState([]);
-  const [fees, setFees] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [fees, setFees] = React.useState<Fee[]>([]);
+  const [announcements, setAnnouncements] = React.useState([]);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        const [donationsResponse, feesResponse] = await Promise.all([
+        const [donationsRes, feesRes, announcementsRes] = await Promise.all([
           fetch("/api/member/donations"),
           fetch("/api/member/fees"),
+          fetch("/api/announcements"),
         ]);
 
-        if (donationsResponse.ok) {
-          const donationsData = await donationsResponse.json();
+        if (donationsRes.ok) {
+          const donationsData = await donationsRes.json();
           setDonations(donationsData.items || []);
         }
 
-        if (feesResponse.ok) {
-          const feesData = await feesResponse.json();
+        if (feesRes.ok) {
+          const feesData = await feesRes.json();
           setFees(feesData.items || []);
+        }
+
+        if (announcementsRes.ok) {
+          const announcementsData = await announcementsRes.json();
+          setAnnouncements(announcementsData.announcements || []);
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -45,44 +52,42 @@ export default function MemberDashboard() {
 
   const memberFeatures = [
     {
-      title: "My Profile",
-      description:
-        "Update your personal information, contact details, and profile photo.",
+      title: t("member.myProfile"),
+      description: t("member.myProfileDesc"),
       icon: User,
       href: "/member/profile",
       color: "bg-blue-50 dark:bg-blue-900/20",
       iconColor: "text-blue-600 dark:text-blue-400",
-      stats: "Profile Complete",
+      stats: t("member.profileComplete"),
     },
     {
-      title: "Monthly Fees",
-      description:
-        "View your membership dues, payment history, and upcoming payments.",
+      title: t("member.monthlyFees"),
+      description: t("member.monthlyFeesDesc"),
       icon: CreditCard,
       href: "/member/fees",
       color: "bg-green-50 dark:bg-green-900/20",
       iconColor: "text-green-600 dark:text-green-400",
-      stats: "All Paid",
+      stats: `${fees.filter((f) => f.status === "paid").length}/${
+        fees.length
+      } ${t("member.paid")}`,
     },
     {
-      title: "My Donations",
-      description:
-        "Track your donation history and contribute to ongoing campaigns.",
+      title: t("member.myDonations"),
+      description: t("member.myDonationsDesc"),
       icon: Heart,
       href: "/member/donations",
       color: "bg-red-50 dark:bg-red-900/20",
       iconColor: "text-red-600 dark:text-red-400",
-      stats: "12 Donations",
+      stats: `${donations.length} ${t("member.donations")}`,
     },
     {
-      title: "Announcements & Events",
-      description:
-        "Stay updated with the latest foundation news and community events.",
+      title: t("member.announcementsEvents"),
+      description: t("member.announcementsEventsDesc"),
       icon: Bell,
       href: "/announcements",
       color: "bg-purple-50 dark:bg-purple-900/20",
       iconColor: "text-purple-600 dark:text-purple-400",
-      stats: "3 New Updates",
+      stats: `${announcements.length} ${t("member.updates")}`,
     },
   ];
 
@@ -100,32 +105,32 @@ export default function MemberDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              Member Dashboard
+              {t("member.dashboard")}
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Welcome,{" "}
-              <span className="text-emerald-600">Community Member</span>
+              {t("member.welcome")},{" "}
+              <span className="text-emerald-600">
+                {t("member.communityMember")}
+              </span>
             </h1>
 
             <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              Manage your membership, track your contributions, and stay
-              connected with our community&apos;s activities and charitable
-              initiatives.
+              {t("member.welcomeDescription")}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <User className="h-4 w-4" />
-                <span>Member Access</span>
+                <span>{t("member.memberAccess")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Heart className="h-4 w-4" />
-                <span>Contribution Tracking</span>
+                <span>{t("member.contributionTracking")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Bell className="h-4 w-4" />
-                <span>Stay Updated</span>
+                <span>{t("member.stayUpdated")}</span>
               </div>
             </div>
           </motion.div>
@@ -236,20 +241,6 @@ export default function MemberDashboard() {
               Years Active
             </div>
           </motion.div>
-        </div>
-      </Section>
-
-      {/* Monthly Fees */}
-      <Section id="fees" className="py-10">
-        <div className="max-w-6xl mx-auto">
-          <MonthlyFees fees={fees} loading={loading} />
-        </div>
-      </Section>
-
-      {/* Donation History */}
-      <Section id="donations" className="py-10">
-        <div className="max-w-6xl mx-auto">
-          <DonationHistory donations={donations} loading={loading} />
         </div>
       </Section>
 

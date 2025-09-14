@@ -10,13 +10,19 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
   if (!userId) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const body = await req.json().catch(() => null);
   const parsed = donationInitSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
 
   const { amount, currency, method, projectSlug, note } = parsed.data;
@@ -26,7 +32,11 @@ export async function POST(req: Request) {
   let projectId: string | undefined;
   if (projectSlug) {
     const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
-    if (!p) return NextResponse.json({ ok: false, error: "Project not found" }, { status: 404 });
+    if (!p)
+      return NextResponse.json(
+        { ok: false, error: "Project not found" },
+        { status: 404 }
+      );
     projectId = String(p._id);
   }
 
@@ -36,12 +46,26 @@ export async function POST(req: Request) {
     projectId,
     amount,
     currency: currency || "BDT",
-    method,                    // sslcommerz | bkash | nagad (not integrated yet)
+    method, // sslcommerz | bkash | nagad (not integrated yet)
     status: "initiated",
     meta: { note },
   });
 
-  // For now, we just return a placeholder URL. Real gateways will redirect externally.
-  const placeholderUrl = `/donations/pending/${doc._id}`;
-  return NextResponse.json({ ok: true, id: String(doc._id), redirectUrl: placeholderUrl }, { status: 201 });
+  // For SSLCommerz integration, this would redirect to the payment gateway
+  // For now, we simulate a successful payment and redirect to the pending page
+  if (method === "sslcommerz") {
+    // In a real implementation, this would redirect to SSLCommerz
+    const redirectUrl = `/donations/pending/${doc._id}`;
+    return NextResponse.json(
+      { ok: true, id: String(doc._id), redirectUrl },
+      { status: 201 }
+    );
+  } else {
+    // For other methods (bkash, nagad, cash), redirect to pending page
+    const redirectUrl = `/donations/pending/${doc._id}`;
+    return NextResponse.json(
+      { ok: true, id: String(doc._id), redirectUrl },
+      { status: 201 }
+    );
+  }
 }

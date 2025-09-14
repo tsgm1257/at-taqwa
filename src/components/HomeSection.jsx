@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +10,7 @@ import {
   HandCoins,
   Receipt,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 
 import Section from "./Section";
@@ -18,44 +19,99 @@ import AnnouncementMarquee from "./AnnouncementMarquee";
 import StatsGrid from "./StatsGrid";
 import QuickDonate from "./QuickDonate";
 import ProgressBar from "./ProgressBar";
-import { useLanguage } from "./LanguageProvider";
-
-const projects = [
-  {
-    id: 1,
-    title: "Flood Relief 2025",
-    raised: 6200,
-    goal: 10000,
-    excerpt: "Emergency support for families affected by seasonal floods.",
-    tag: "Emergency",
-  },
-  {
-    id: 2,
-    title: "Winter Warmth Drive",
-    raised: 3850,
-    goal: 6000,
-    excerpt: "Blankets & clothing for the needy before winter.",
-    tag: "Seasonal",
-  },
-  {
-    id: 3,
-    title: "Tree Plantation Week",
-    raised: 1250,
-    goal: 3000,
-    excerpt: "Plant 1,000+ trees across the union.",
-    tag: "Environment",
-  },
-];
-
-const stats = [
-  { label: "Active Members", value: 128 },
-  { label: "Donors This Month", value: 56 },
-  { label: "Funds Raised (BDT)", value: 280450 },
-  { label: "Trees Planted", value: 2140 },
-];
+import { useLanguage } from "@/app/providers";
 
 export default function HomeSection() {
   const { t } = useLanguage();
+  const [projects, setProjects] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [latestReport, setLatestReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch all data in parallel
+        const [projectsRes, eventsRes, reportsRes, statsRes] =
+          await Promise.all([
+            fetch("/api/projects"),
+            fetch("/api/events"),
+            fetch("/api/reports"),
+            fetch("/api/stats"),
+          ]);
+
+        let allProjects = [];
+        let allEvents = [];
+        let allReports = [];
+
+        // Process projects
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json();
+          allProjects = projectsData.items || [];
+          setProjects(allProjects.slice(0, 3));
+        } else {
+          console.error("Failed to fetch projects:", projectsRes.status);
+        }
+
+        // Process events
+        if (eventsRes.ok) {
+          const eventsData = await eventsRes.json();
+          allEvents = eventsData.events || [];
+          setEvents(allEvents.slice(0, 3));
+        }
+
+        // Process reports
+        if (reportsRes.ok) {
+          const reportsData = await reportsRes.json();
+          allReports = reportsData.items || [];
+          const sortedReports = allReports.sort(
+            (a, b) => new Date(b.month) - new Date(a.month)
+          );
+          setLatestReport(sortedReports[0] || null);
+        }
+
+        // Process stats
+        let statsData = {
+          activeProjects: allProjects.length,
+          activeMembers: 0,
+          totalRaised: 0,
+          donorsThisMonth: 0,
+        };
+
+        if (statsRes.ok) {
+          const statsResponse = await statsRes.json();
+          if (statsResponse.ok) {
+            statsData = statsResponse.stats;
+          }
+        } else {
+          console.error("Failed to fetch stats:", statsRes.status);
+        }
+
+        setStats([
+          { label: "Active Members", value: statsData.activeMembers },
+          { label: "Donors This Month", value: statsData.donorsThisMonth },
+          { label: "Funds Raised (BDT)", value: statsData.totalRaised },
+          { label: "Active Projects", value: statsData.activeProjects },
+        ]);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        // Fallback to default stats if API fails
+        setStats([
+          { label: "Active Members", value: 0 },
+          { label: "Donors This Month", value: 0 },
+          { label: "Funds Raised (BDT)", value: 0 },
+          { label: "Active Projects", value: 0 },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-white via-emerald-50/60 to-white dark:from-emerald-950 dark:via-emerald-950/40 dark:to-emerald-950 text-emerald-950 dark:text-emerald-50">
@@ -166,41 +222,59 @@ export default function HomeSection() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((p) => {
-            const percent = (p.raised / p.goal) * 100;
-            return (
-              <motion.article
-                key={p.id}
-                whileHover={{ y: -4 }}
-                className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-5 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs rounded-full bg-emerald-100 dark:bg-emerald-800/40 px-2 py-1">
-                    {p.tag}
-                  </span>
-                  <span className="text-xs font-semibold">
-                    BDT {p.raised.toLocaleString()} / {p.goal.toLocaleString()}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-lg font-bold">{p.title}</h3>
-                <p className="mt-1 text-sm text-emerald-800/80 dark:text-emerald-50/80">
-                  {p.excerpt}
-                </p>
-                <div className="mt-4 space-y-2">
-                  <ProgressBar value={percent} />
-                  <div className="text-xs flex items-center justify-between">
-                    <span>{Math.round(percent)}% funded</span>
-                    <Link
-                      href={`/projects`}
-                      className="inline-flex items-center gap-1 font-semibold hover:text-emerald-600 dark:hover:text-emerald-300"
-                    >
-                      Donate <ArrowRight className="h-4 w-4" />
-                    </Link>
+          {loading ? (
+            <div className="col-span-full flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-emerald-700 dark:text-emerald-300">
+                No active projects at the moment.
+              </p>
+            </div>
+          ) : (
+            projects.map((p) => {
+              const currentAmount = p.currentAmount || 0;
+              const targetAmount = p.targetAmount || 0;
+              const percent =
+                targetAmount > 0
+                  ? Math.round((currentAmount / targetAmount) * 100)
+                  : 0;
+              return (
+                <motion.article
+                  key={p._id}
+                  whileHover={{ y: -4 }}
+                  className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs rounded-full bg-emerald-100 dark:bg-emerald-800/40 px-2 py-1">
+                      {p.category || "General"}
+                    </span>
+                    <span className="text-xs font-semibold">
+                      BDT {currentAmount.toLocaleString()} /{" "}
+                      {targetAmount.toLocaleString()}
+                    </span>
                   </div>
-                </div>
-              </motion.article>
-            );
-          })}
+                  <h3 className="mt-3 text-lg font-bold">{p.title}</h3>
+                  <p className="mt-1 text-sm text-emerald-800/80 dark:text-emerald-50/80">
+                    {p.description?.substring(0, 100)}...
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    <ProgressBar value={percent} />
+                    <div className="text-xs flex items-center justify-between">
+                      <span>{isNaN(percent) ? 0 : percent}% funded</span>
+                      <Link
+                        href={`/projects/${p.slug}`}
+                        className="inline-flex items-center gap-1 font-semibold hover:text-emerald-600 dark:hover:text-emerald-300"
+                      >
+                        Donate <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.article>
+              );
+            })
+          )}
         </div>
       </Section>
 
@@ -231,30 +305,51 @@ export default function HomeSection() {
           </div>
 
           <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold">Latest Report: August 2025</span>
-              <span className="text-emerald-700/70 dark:text-emerald-200/70">
-                BDT 42,350 balance
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="space-y-2">
-                {[68, 52, 75, 40, 84, 60].map((v, i) => (
-                  <div
-                    key={i}
-                    className="h-2 rounded bg-emerald-100 dark:bg-emerald-900/40 overflow-hidden"
-                  >
-                    <div
-                      className="h-full bg-emerald-500 dark:bg-emerald-400"
-                      style={{ width: `${v}%` }}
-                    />
+            {latestReport ? (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold">
+                    Latest Report: {latestReport.month}
+                  </span>
+                  <span className="text-emerald-700/70 dark:text-emerald-200/70">
+                    BDT {latestReport.closingBalance?.toLocaleString() || 0}{" "}
+                    balance
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <div className="text-emerald-700/70 dark:text-emerald-200/70">
+                        Income
+                      </div>
+                      <div className="font-semibold">
+                        BDT {latestReport.income?.toLocaleString() || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-emerald-700/70 dark:text-emerald-200/70">
+                        Expenses
+                      </div>
+                      <div className="font-semibold">
+                        BDT {latestReport.expenses?.toLocaleString() || 0}
+                      </div>
+                    </div>
                   </div>
-                ))}
+                  <div className="mt-3 text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
+                    Financial transparency for {latestReport.month}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
+                  No reports available yet
+                </div>
+                <div className="text-xs text-emerald-600/70 dark:text-emerald-300/70 mt-1">
+                  Reports will appear here once created
+                </div>
               </div>
-              <div className="mt-3 text-[11px] text-emerald-700/70 dark:text-emerald-200/70">
-                Income vs. Expense trend (sample). Replace with live chart.
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </Section>
@@ -278,30 +373,47 @@ export default function HomeSection() {
           </Link>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
-          {[
-            {
-              d: "Fri 20 Sep",
-              t: "Aid Distribution • Ward 4",
-              k: "Distribution center, 3:30 PM",
-            },
-            { d: "Sat 21 Sep", t: "Volunteers Meetup", k: "Office, 10:30 AM" },
-            {
-              d: "Sun 29 Sep",
-              t: "Tree Plantation",
-              k: "School field, 8:00 AM",
-            },
-          ].map((e, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-5"
-            >
-              <div className="text-xs text-emerald-700/70 dark:text-emerald-200/70">
-                {e.d}
-              </div>
-              <div className="mt-1 font-semibold">{e.t}</div>
-              <div className="text-sm">{e.k}</div>
+          {loading ? (
+            <div className="col-span-full flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-emerald-600 dark:text-emerald-400" />
             </div>
-          ))}
+          ) : events.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <p className="text-emerald-700 dark:text-emerald-300">
+                No upcoming events scheduled.
+              </p>
+            </div>
+          ) : (
+            events.map((e, i) => {
+              const eventDate = new Date(e.date);
+              const formattedDate = eventDate.toLocaleDateString("en-US", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              });
+              const formattedTime = eventDate.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+
+              return (
+                <div
+                  key={e._id}
+                  className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-5"
+                >
+                  <div className="text-xs text-emerald-700/70 dark:text-emerald-200/70">
+                    {formattedDate}
+                  </div>
+                  <div className="mt-1 font-semibold">{e.title}</div>
+                  <div className="text-sm">
+                    {e.location && `${e.location}, `}
+                    {formattedTime}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </Section>
 

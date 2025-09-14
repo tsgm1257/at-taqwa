@@ -18,29 +18,36 @@ import {
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
-import DonationHistory from "@/components/DonationHistory";
+import { useLanguage } from "@/app/providers";
 
 export default function UserDashboard() {
+  const { t } = useLanguage();
   const [donations, setDonations] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [announcements, setAnnouncements] = React.useState([]);
 
   React.useEffect(() => {
-    const fetchDonations = async () => {
+    const fetchData = async () => {
       try {
-        setLoading(true);
-        const response = await fetch("/api/member/donations");
-        if (response.ok) {
-          const data = await response.json();
-          setDonations(data.items || []);
+        const [donationsRes, announcementsRes] = await Promise.all([
+          fetch("/api/member/donations"),
+          fetch("/api/announcements"),
+        ]);
+
+        if (donationsRes.ok) {
+          const donationsData = await donationsRes.json();
+          setDonations(donationsData.items || []);
+        }
+
+        if (announcementsRes.ok) {
+          const announcementsData = await announcementsRes.json();
+          setAnnouncements(announcementsData.announcements || []);
         }
       } catch (error) {
-        console.error("Failed to fetch donations:", error);
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch data:", error);
       }
     };
 
-    fetchDonations();
+    fetchData();
   }, []);
 
   return (
@@ -57,31 +64,30 @@ export default function UserDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              User Dashboard
+              {t("user.dashboard")}
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Welcome to Your{" "}
-              <span className="text-emerald-600">Dashboard</span>
+              {t("user.welcomeToYour")}{" "}
+              <span className="text-emerald-600">{t("user.dashboard")}</span>
             </h1>
 
             <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              Manage your profile, view announcements, and stay connected with
-              the At-Taqwa Foundation community.
+              {t("user.welcomeDescription")}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <User className="h-4 w-4" />
-                <span>Profile Management</span>
+                <span>{t("user.profileManagement")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Bell className="h-4 w-4" />
-                <span>Announcements</span>
+                <span>{t("user.announcements")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Heart className="h-4 w-4" />
-                <span>Community</span>
+                <span>{t("user.community")}</span>
               </div>
             </div>
           </motion.div>
@@ -106,10 +112,10 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">
-                    Profile
+                    {t("user.profile")}
                   </h3>
                   <p className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-                    Manage your information
+                    {t("user.manageYourInformation")}
                   </p>
                 </div>
               </div>
@@ -122,19 +128,19 @@ export default function UserDashboard() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Link
-              href="/announcements"
+              href="/user/donations"
               className="block rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-6 shadow-sm hover:shadow-md transition-all duration-300 group"
             >
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-800/40 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/40 transition">
-                  <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-3 rounded-xl bg-red-100 dark:bg-red-800/40 group-hover:bg-red-200 dark:group-hover:bg-red-700/40 transition">
+                  <Heart className="h-6 w-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">
-                    Announcements
+                    {t("user.myDonations")}
                   </h3>
                   <p className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-                    Latest updates
+                    {t("user.trackYourContributions")}
                   </p>
                 </div>
               </div>
@@ -147,6 +153,31 @@ export default function UserDashboard() {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <Link
+              href="/announcements"
+              className="block rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-6 shadow-sm hover:shadow-md transition-all duration-300 group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-800/40 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/40 transition">
+                  <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">
+                    {t("user.announcements")}
+                  </h3>
+                  <p className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
+                    {announcements.length} {t("user.updates")}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <Link
               href="/projects"
               className="block rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-6 shadow-sm hover:shadow-md transition-all duration-300 group"
             >
@@ -156,10 +187,10 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">
-                    Projects
+                    {t("user.projects")}
                   </h3>
                   <p className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-                    View initiatives
+                    {t("user.viewInitiatives")}
                   </p>
                 </div>
               </div>
@@ -220,7 +251,8 @@ export default function UserDashboard() {
               Updates
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-              Get the latest announcements and project updates
+              Stay updated with {announcements.length} announcements and project
+              updates
             </div>
           </motion.div>
 
@@ -237,13 +269,6 @@ export default function UserDashboard() {
               Apply for membership to access more features
             </div>
           </motion.div>
-        </div>
-      </Section>
-
-      {/* Donation History */}
-      <Section id="donations" className="py-10">
-        <div className="max-w-6xl mx-auto">
-          <DonationHistory donations={donations} loading={loading} />
         </div>
       </Section>
 

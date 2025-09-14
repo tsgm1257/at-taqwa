@@ -24,6 +24,7 @@ import {
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
+import { useLanguage } from "@/app/providers";
 
 type Project = {
   _id: string;
@@ -42,6 +43,7 @@ type Project = {
 };
 
 export default function AdminProjectsPage() {
+  const { t } = useLanguage();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showCreateForm, setShowCreateForm] = React.useState(false);

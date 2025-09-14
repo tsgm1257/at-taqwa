@@ -13,6 +13,7 @@ import {
 import DonateButton from "@/components/DonateButton";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
+import { useLanguage } from "@/app/providers";
 
 type Project = {
   _id: string;
@@ -35,6 +36,7 @@ export default function ProjectDetail({
 }: {
   params: { slug: string };
 }) {
+  const { t } = useLanguage();
   const [project, setProject] = React.useState<Project | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -45,14 +47,16 @@ export default function ProjectDetail({
         setLoading(true);
         const res = await fetch(`/api/projects/${params.slug}`);
         if (!res.ok) {
-          throw new Error("Project not found");
+          throw new Error(t("projectDetail.projectNotFound"));
         }
         const json = await res.json();
         setProject(json.item || null);
       } catch (err) {
-        console.error("Failed to fetch project:", err);
+        console.error(t("projectDetail.failedToFetchProject"), err);
         setError(
-          err instanceof Error ? err.message : "Failed to fetch project"
+          err instanceof Error
+            ? err.message
+            : t("projectDetail.failedToFetchProject")
         );
       } finally {
         setLoading(false);
@@ -144,13 +148,13 @@ export default function ProjectDetail({
   const getStatusText = (status: string) => {
     switch (status) {
       case "active":
-        return "Active";
+        return t("projectDetail.active");
       case "completed":
-        return "Completed";
+        return t("projectDetail.completed");
       case "paused":
-        return "Paused";
+        return t("projectDetail.paused");
       default:
-        return "Unknown";
+        return t("projectDetail.unknown");
     }
   };
 

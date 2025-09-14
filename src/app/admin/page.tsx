@@ -13,29 +13,75 @@ import {
   Megaphone,
   DollarSign,
   Calendar,
+  CreditCard,
 } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
-import DonationHistory from "@/components/DonationHistory";
-import MonthlyFees from "@/components/MonthlyFees";
+import { useLanguage } from "@/app/providers";
+
+type MembershipRequest = {
+  _id: string;
+  status: "pending" | "approved" | "denied";
+};
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
+  const [events, setEvents] = React.useState([]);
+  const [projects, setProjects] = React.useState([]);
+  const [membershipRequests, setMembershipRequests] = React.useState<
+    MembershipRequest[]
+  >([]);
+  const [announcements, setAnnouncements] = React.useState([]);
+  const [reports, setReports] = React.useState([]);
   const [donations, setDonations] = React.useState([]);
   const [fees, setFees] = React.useState([]);
-  const [events, setEvents] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        const [donationsResponse, feesResponse, eventsResponse] =
-          await Promise.all([
-            fetch("/api/admin/donations"),
-            fetch("/api/admin/fees"),
-            fetch("/api/admin/events"),
-          ]);
+        const [
+          eventsResponse,
+          projectsResponse,
+          membershipResponse,
+          announcementsResponse,
+          reportsResponse,
+          donationsResponse,
+          feesResponse,
+        ] = await Promise.all([
+          fetch("/api/admin/events"),
+          fetch("/api/admin/projects"),
+          fetch("/api/admin/membership-requests"),
+          fetch("/api/admin/announcements"),
+          fetch("/api/admin/reports"),
+          fetch("/api/admin/donations"),
+          fetch("/api/admin/fees"),
+        ]);
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          setEvents(eventsData.events || []);
+        }
+
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json();
+          setProjects(projectsData.projects || []);
+        }
+
+        if (membershipResponse.ok) {
+          const membershipData = await membershipResponse.json();
+          setMembershipRequests(membershipData.requests || []);
+        }
+
+        if (announcementsResponse.ok) {
+          const announcementsData = await announcementsResponse.json();
+          setAnnouncements(announcementsData.announcements || []);
+        }
+
+        if (reportsResponse.ok) {
+          const reportsData = await reportsResponse.json();
+          setReports(reportsData.reports || []);
+        }
 
         if (donationsResponse.ok) {
           const donationsData = await donationsResponse.json();
@@ -46,15 +92,8 @@ export default function AdminDashboard() {
           const feesData = await feesResponse.json();
           setFees(feesData.items || []);
         }
-
-        if (eventsResponse.ok) {
-          const eventsData = await eventsResponse.json();
-          setEvents(eventsData.events || []);
-        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -63,64 +102,78 @@ export default function AdminDashboard() {
 
   const adminFeatures = [
     {
-      title: "My Profile",
-      description:
-        "Update your administrator profile, contact details, and system preferences.",
+      title: t("admin.myProfile"),
+      description: t("admin.myProfileDesc"),
       icon: Shield,
       href: "/admin/profile",
       color: "bg-purple-50 dark:bg-purple-900/20",
       iconColor: "text-purple-600 dark:text-purple-400",
-      stats: "Admin Profile",
+      stats: t("admin.adminProfile"),
     },
     {
-      title: "Manage Projects & Campaigns",
-      description:
-        "Create, update, and monitor fundraising campaigns with real-time progress tracking.",
+      title: t("admin.manageProjects"),
+      description: t("admin.manageProjectsDesc"),
       icon: BarChart3,
       href: "/admin/projects",
       color: "bg-blue-50 dark:bg-blue-900/20",
       iconColor: "text-blue-600 dark:text-blue-400",
-      stats: "12 Active Projects",
+      stats: `${projects.length} ${t("admin.activeProjects")}`,
     },
     {
-      title: "Membership Requests",
-      description:
-        "Review and approve member applications to grow our community.",
+      title: t("admin.membershipRequests"),
+      description: t("admin.membershipRequestsDesc"),
       icon: UserPlus,
       href: "/admin/members",
       color: "bg-green-50 dark:bg-green-900/20",
       iconColor: "text-green-600 dark:text-green-400",
-      stats: "5 Pending Requests",
+      stats: `${
+        membershipRequests.filter((r) => r.status === "pending").length
+      } ${t("admin.pendingRequests")}`,
     },
     {
-      title: "Manage Events",
-      description:
-        "Create, schedule, and manage community events with attendee tracking and notifications.",
+      title: t("admin.manageEvents"),
+      description: t("admin.manageEventsDesc"),
       icon: Calendar,
       href: "/admin/events",
       color: "bg-orange-50 dark:bg-orange-900/20",
       iconColor: "text-orange-600 dark:text-orange-400",
-      stats: `${events.length} Total Events`,
+      stats: `${events.length} ${t("admin.totalEvents")}`,
     },
     {
-      title: "Announcements",
-      description:
-        "Publish important notices, updates, and community communications.",
+      title: t("admin.announcements"),
+      description: t("admin.announcementsDesc"),
       icon: Megaphone,
       href: "/admin/announcements",
       color: "bg-purple-50 dark:bg-purple-900/20",
       iconColor: "text-purple-600 dark:text-purple-400",
-      stats: "Active Announcements",
+      stats: `${announcements.length} ${t("admin.activeAnnouncements")}`,
     },
     {
-      title: "Financial Reports",
-      description:
-        "Upload and manage monthly financial reports for complete transparency.",
+      title: t("admin.financialReports"),
+      description: t("admin.financialReportsDesc"),
       icon: DollarSign,
       href: "/admin/reports",
       color: "bg-emerald-50 dark:bg-emerald-900/20",
       iconColor: "text-emerald-600 dark:text-emerald-400",
-      stats: "Monthly Reports",
+      stats: `${reports.length} ${t("admin.monthlyReports")}`,
+    },
+    {
+      title: t("admin.donationManagement"),
+      description: t("admin.donationManagementDesc"),
+      icon: DollarSign,
+      href: "/admin/donations",
+      color: "bg-blue-50 dark:bg-blue-900/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      stats: `${donations.length} ${t("admin.totalDonations")}`,
+    },
+    {
+      title: t("admin.monthlyFees"),
+      description: t("admin.monthlyFeesDesc"),
+      icon: CreditCard,
+      href: "/admin/fees",
+      color: "bg-green-50 dark:bg-green-900/20",
+      iconColor: "text-green-600 dark:text-green-400",
+      stats: `${fees.length} ${t("admin.feeRecords")}`,
     },
   ];
 
@@ -138,31 +191,32 @@ export default function AdminDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              Admin Dashboard
+              {t("admin.dashboard")}
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Welcome, <span className="text-emerald-600">Administrator</span>
+              {t("admin.welcome")},{" "}
+              <span className="text-emerald-600">
+                {t("admin.administrator")}
+              </span>
             </h1>
 
             <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              Manage your foundation&apos;s operations, oversee community
-              activities, and ensure transparent governance of all charitable
-              initiatives.
+              {t("admin.welcomeDescription")}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Shield className="h-4 w-4" />
-                <span>Full Access</span>
+                <span>{t("admin.fullAccess")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Users className="h-4 w-4" />
-                <span>Community Management</span>
+                <span>{t("admin.communityManagement")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Settings className="h-4 w-4" />
-                <span>System Control</span>
+                <span>{t("admin.systemControl")}</span>
               </div>
             </div>
           </motion.div>
@@ -273,20 +327,6 @@ export default function AdminDashboard() {
               Total Events
             </div>
           </motion.div>
-        </div>
-      </Section>
-
-      {/* Monthly Fees */}
-      <Section id="fees" className="py-10">
-        <div className="max-w-6xl mx-auto">
-          <MonthlyFees fees={fees} loading={loading} />
-        </div>
-      </Section>
-
-      {/* Donation History */}
-      <Section id="donations" className="py-10">
-        <div className="max-w-6xl mx-auto">
-          <DonationHistory donations={donations} loading={loading} />
         </div>
       </Section>
 

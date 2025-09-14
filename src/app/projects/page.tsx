@@ -60,13 +60,13 @@ export default function ProjectsPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "active":
-        return "Active";
+        return t("projects.active");
       case "completed":
-        return "Completed";
+        return t("projects.completed");
       case "paused":
-        return "Paused";
+        return t("projects.paused");
       default:
-        return "Unknown";
+        return t("projects.unknown");
     }
   };
 

@@ -145,30 +145,30 @@ export default function AuthPage() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              Join Our Community
+              {t("auth.joinCommunity")}
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              Welcome to <span className="text-emerald-600">At-Taqwa</span>
+              {t("auth.welcomeTo")}{" "}
+              <span className="text-emerald-600">At-Taqwa</span>
             </h1>
 
             <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              Sign in to your account or create a new one to join our community
-              and start making a difference together.
+              {t("auth.welcomeDescription")}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <Shield className="h-4 w-4" />
-                <span>Secure & Private</span>
+                <span>{t("auth.securePrivate")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <User className="h-4 w-4" />
-                <span>Community Focused</span>
+                <span>{t("auth.communityFocused")}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
                 <ArrowRight className="h-4 w-4" />
-                <span>Easy Access</span>
+                <span>{t("auth.easyAccess")}</span>
               </div>
             </div>
           </motion.div>
@@ -196,7 +196,7 @@ export default function AuthPage() {
               >
                 <div className="flex items-center justify-center gap-2">
                   <LogIn className="h-5 w-5" />
-                  Sign In
+                  {t("auth.signIn")}
                 </div>
               </button>
               <button
@@ -209,7 +209,7 @@ export default function AuthPage() {
               >
                 <div className="flex items-center justify-center gap-2">
                   <UserPlus className="h-5 w-5" />
-                  Register
+                  {t("auth.register")}
                 </div>
               </button>
             </div>
@@ -226,10 +226,10 @@ export default function AuthPage() {
                 >
                   <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
-                      Welcome Back
+                      {t("auth.welcomeBack")}
                     </h2>
                     <p className="text-emerald-700/80 dark:text-emerald-200/80">
-                      Sign in to your account to continue
+                      {t("auth.signInToContinue")}
                     </p>
                   </div>
 
@@ -242,7 +242,7 @@ export default function AuthPage() {
                         <Mail className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type="email"
-                          placeholder="Email address"
+                          placeholder={t("auth.emailAddress")}
                           {...signInForm.register("email")}
                           className="w-full pl-12 pr-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -259,7 +259,7 @@ export default function AuthPage() {
                         <Lock className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Password"
+                          placeholder={t("auth.password")}
                           {...signInForm.register("password")}
                           className="w-full pl-12 pr-12 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -292,7 +292,7 @@ export default function AuthPage() {
                       ) : (
                         <>
                           <LogIn className="h-5 w-5" />
-                          Sign In
+                          {t("auth.signIn")}
                         </>
                       )}
                     </button>
@@ -308,10 +308,10 @@ export default function AuthPage() {
                 >
                   <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
-                      Join Our Community
+                      {t("auth.joinCommunity")}
                     </h2>
                     <p className="text-emerald-700/80 dark:text-emerald-200/80">
-                      Create your account to get started
+                      {t("auth.createAccountToStart")}
                     </p>
                   </div>
 
@@ -324,7 +324,7 @@ export default function AuthPage() {
                         <User className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type="text"
-                          placeholder="Full name"
+                          placeholder={t("auth.fullName")}
                           {...registerForm.register("name")}
                           className="w-full pl-12 pr-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -341,7 +341,7 @@ export default function AuthPage() {
                         <Mail className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type="email"
-                          placeholder="Email address"
+                          placeholder={t("auth.emailAddress")}
                           {...registerForm.register("email")}
                           className="w-full pl-12 pr-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -358,7 +358,7 @@ export default function AuthPage() {
                         <Lock className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Password"
+                          placeholder={t("auth.password")}
                           {...registerForm.register("password")}
                           className="w-full pl-12 pr-12 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -386,7 +386,7 @@ export default function AuthPage() {
                         <Lock className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
                         <input
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm password"
+                          placeholder={t("auth.confirmPassword")}
                           {...registerForm.register("confirmPassword")}
                           className="w-full pl-12 pr-12 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 placeholder-emerald-500 dark:placeholder-emerald-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
                         />
@@ -424,7 +424,7 @@ export default function AuthPage() {
                       ) : (
                         <>
                           <UserPlus className="h-5 w-5" />
-                          Create Account
+                          {t("auth.createAccount")}
                         </>
                       )}
                     </button>
@@ -440,24 +440,23 @@ export default function AuthPage() {
       <Section className="py-12">
         <div className="rounded-3xl border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-8 text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
-            Ready to Make a Difference?
+            {t("auth.readyToMakeDifference")}
           </h3>
           <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-            Join our community of changemakers and start contributing to
-            meaningful projects that make a real impact in our village.
+            {t("auth.joinCommunityDescription")}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <button
               onClick={() => setActiveTab("register")}
               className="rounded-xl bg-white text-emerald-700 px-6 py-3 font-semibold hover:bg-emerald-50 transition inline-flex items-center gap-2"
             >
-              <UserPlus className="h-5 w-5" /> Join Now
+              <UserPlus className="h-5 w-5" /> {t("auth.joinNow")}
             </button>
             <button
               onClick={() => setActiveTab("signin")}
               className="rounded-xl border border-white/60 px-6 py-3 font-semibold hover:bg-white/10 transition inline-flex items-center gap-2"
             >
-              Sign In <ArrowRight className="h-4 w-4" />
+              {t("auth.signIn")} <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </div>

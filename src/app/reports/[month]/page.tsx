@@ -1,5 +1,18 @@
+"use client";
+
+import React from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie} from "recharts";
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+} from "recharts";
+import { useLanguage } from "@/app/providers";
 
 type Report = {
   _id: string;
@@ -15,19 +28,58 @@ type Report = {
   summary?: string;
 };
 
-async function fetchReport(month: string): Promise<Report | null> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/reports/${month}`, { cache: "no-store" });
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.item || null;
-}
+export default function ReportDetail({
+  params,
+}: {
+  params: { month: string };
+}) {
+  const { t } = useLanguage();
+  const [report, setReport] = React.useState<Report | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
-export default async function ReportDetail({ params }: { params: { month: string } }) {
-  const r = await fetchReport(params.month);
-  if (!r) return <div className="max-w-4xl mx-auto p-6">Report not found.</div>;
+  React.useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const res = await fetch(`/api/reports/${params.month}`);
+        if (!res.ok) {
+          setReport(null);
+          return;
+        }
+        const json = await res.json();
+        setReport(json.item || null);
+      } catch (error) {
+        console.error("Failed to fetch report:", error);
+        setReport(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const incomeData = r.income.map(i => ({ name: i.category, value: i.amount }));
-  const expenseData = r.expense.map(e => ({ name: e.category, value: e.amount }));
+    fetchReport();
+  }, [params.month]);
+
+  if (loading) {
+    return <div className="max-w-4xl mx-auto p-6">{t("common.loading")}</div>;
+  }
+
+  if (!report) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        {t("reportDetail.reportNotFound")}
+      </div>
+    );
+  }
+
+  const r = report;
+
+  const incomeData = r.income.map((i) => ({
+    name: i.category,
+    value: i.amount,
+  }));
+  const expenseData = r.expense.map((e) => ({
+    name: e.category,
+    value: e.amount,
+  }));
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
@@ -39,26 +91,36 @@ export default async function ReportDetail({ params }: { params: { month: string
 
       <div className="stats shadow">
         <div className="stat">
-          <div className="stat-title">Opening</div>
-          <div className="stat-value">{r.openingBalance} {r.currency}</div>
+          <div className="stat-title">{t("reportDetail.opening")}</div>
+          <div className="stat-value">
+            {r.openingBalance} {r.currency}
+          </div>
         </div>
         <div className="stat">
-          <div className="stat-title">Income</div>
-          <div className="stat-value">{r.totalIncome} {r.currency}</div>
+          <div className="stat-title">{t("reportDetail.income")}</div>
+          <div className="stat-value">
+            {r.totalIncome} {r.currency}
+          </div>
         </div>
         <div className="stat">
-          <div className="stat-title">Expense</div>
-          <div className="stat-value">{r.totalExpense} {r.currency}</div>
+          <div className="stat-title">{t("reportDetail.expense")}</div>
+          <div className="stat-value">
+            {r.totalExpense} {r.currency}
+          </div>
         </div>
         <div className="stat">
-          <div className="stat-title">Closing</div>
-          <div className="stat-value">{r.closingBalance} {r.currency}</div>
+          <div className="stat-title">{t("reportDetail.closing")}</div>
+          <div className="stat-value">
+            {r.closingBalance} {r.currency}
+          </div>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-base-100 p-4 rounded-xl shadow">
-          <h2 className="font-semibold mb-3">Income by Category</h2>
+          <h2 className="font-semibold mb-3">
+            {t("reportDetail.incomeByCategory")}
+          </h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={incomeData}>
@@ -71,32 +133,68 @@ export default async function ReportDetail({ params }: { params: { month: string
             </ResponsiveContainer>
           </div>
           <table className="table mt-4">
-            <thead><tr><th>Category</th><th>Amount</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
             <tbody>
               {r.income.map((i, idx) => (
-                <tr key={idx}><td>{i.category}</td><td>{i.amount} {r.currency}</td></tr>
+                <tr key={idx}>
+                  <td>{i.category}</td>
+                  <td>
+                    {i.amount} {r.currency}
+                  </td>
+                </tr>
               ))}
-              {r.income.length === 0 && <tr><td colSpan={2}>No income items.</td></tr>}
+              {r.income.length === 0 && (
+                <tr>
+                  <td colSpan={2}>No income items.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="bg-base-100 p-4 rounded-xl shadow">
-          <h2 className="font-semibold mb-3">Expenses by Category</h2>
+          <h2 className="font-semibold mb-3">
+            {t("reportDetail.expenseByCategory")}
+          </h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={expenseData} dataKey="value" nameKey="name" outerRadius={100} label />
+                <Pie
+                  data={expenseData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={100}
+                  label
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <table className="table mt-4">
-            <thead><tr><th>Category</th><th>Amount</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
             <tbody>
               {r.expense.map((i, idx) => (
-                <tr key={idx}><td>{i.category}</td><td>{i.amount} {r.currency}</td></tr>
+                <tr key={idx}>
+                  <td>{i.category}</td>
+                  <td>
+                    {i.amount} {r.currency}
+                  </td>
+                </tr>
               ))}
-              {r.expense.length === 0 && <tr><td colSpan={2}>No expenses recorded.</td></tr>}
+              {r.expense.length === 0 && (
+                <tr>
+                  <td colSpan={2}>No expenses recorded.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

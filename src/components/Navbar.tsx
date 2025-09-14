@@ -76,7 +76,7 @@ export default function Navbar() {
             <div className="hidden sm:flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-sm bg-white/70 dark:bg-emerald-900/30">
               <Search className="h-4 w-4 opacity-70" />
               <input
-                placeholder="Search projects, events, reports"
+                placeholder={t("search_placeholder")}
                 className="bg-transparent outline-none w-56"
               />
             </div>
