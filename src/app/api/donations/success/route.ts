@@ -3,8 +3,46 @@ import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
 import { sslcommerzDirectService } from "@/lib/sslcommerz-direct";
+import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
+
+// Hash validation function for SSLCommerz callback
+function validateHash(data: Record<string, any>, storePasswd: string): boolean {
+  try {
+    const {
+      tran_id,
+      val_id,
+      amount,
+      store_amount,
+      currency,
+      status,
+      verify_sign,
+      verify_key
+    } = data;
+
+    // Create the hash string in the exact order specified by SSLCommerz
+    const hashString = `${storePasswd}${val_id}${tran_id}${amount}${currency}${status}`;
+    
+    // Generate SHA256 hash
+    const calculatedHash = crypto
+      .createHash('sha256')
+      .update(hashString)
+      .digest('hex');
+
+    console.log("Hash validation:", {
+      hashString: `${storePasswd.substring(0, 4)}***${val_id}${tran_id}${amount}${currency}${status}`,
+      receivedHash: verify_sign,
+      calculatedHash,
+      isValid: calculatedHash === verify_sign
+    });
+
+    return calculatedHash === verify_sign;
+  } catch (error) {
+    console.error("Hash validation error:", error);
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,6 +89,21 @@ export async function POST(req: NextRequest) {
     // Validate the payment - be more permissive for debugging
     console.log("Starting payment validation with status:", status);
     
+    // First, validate the hash signature from SSLCommerz
+    const storePasswd = process.env.SSLCZ_STORE_PASSWD;
+    const isHashValid = storePasswd ? validateHash({
+      tran_id,
+      val_id,
+      amount,
+      store_amount,
+      currency,
+      status,
+      verify_sign,
+      verify_key
+    }, storePasswd) : false;
+
+    console.log("Hash validation result:", { isHashValid, hasStorePasswd: !!storePasswd });
+
     if (status === "VALID" || status === "VALIDATED" || status === "SUCCESS") {
       const isSandbox = process.env.SSLCZ_IS_SANDBOX === "true";
       let validationResult: any = null;
@@ -109,11 +162,21 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (
+      // Only proceed if hash validation passes OR if we're in sandbox mode
+      const shouldProceed = isHashValid || (isSandbox && !isHashValid);
+      
+      console.log("Payment validation decision:", {
+        isHashValid,
+        isSandbox,
+        shouldProceed,
+        validationResult: validationResult?.status
+      });
+
+      if (shouldProceed && (
         !validationResult ||
         validationResult.status === "VALID" ||
         validationResult.status === "VALIDATED"
-      ) {
+      )) {
         // Find the donation record
         const donation = await Donation.findById(value_a);
 
@@ -206,7 +269,9 @@ export async function POST(req: NextRequest) {
       tran_id,
       val_id,
       validationResult,
-      reason: "validation_failed"
+      isHashValid,
+      isSandbox,
+      reason: !isHashValid ? "hash_validation_failed" : "validation_failed"
     });
     
     // Emergency bypass: if we have a tran_id, assume payment succeeded
@@ -219,10 +284,11 @@ export async function POST(req: NextRequest) {
     }
     
     const baseUrl = new URL(req.url).origin;
+    const failureReason = !isHashValid ? "hash_validation_failed" : "validation_failed";
     const redirectUrl =
       tran_id && tran_id !== "null" && tran_id !== ""
-        ? `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=validation_failed`
-        : `${baseUrl}/donations/failed?reason=validation_failed`;
+        ? `${baseUrl}/donations/failed?tran_id=${tran_id}&reason=${failureReason}`
+        : `${baseUrl}/donations/failed?reason=${failureReason}`;
     console.log("Redirecting to failure page:", redirectUrl);
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
