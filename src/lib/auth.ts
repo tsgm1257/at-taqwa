@@ -24,25 +24,39 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        await dbConnect();
-        const user = (await User.findOne({
-          email: credentials.email,
-        }).lean()) as UserDocument | null;
-        if (!user) return null;
-        const ok = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
-        if (!ok) return null;
+        try {
+          if (!credentials?.email || !credentials?.password) return null;
+          
+          // Check if MongoDB URI is available
+          if (!process.env.MONGODB_URI) {
+            console.error("MONGODB_URI not found in environment variables");
+            return null;
+          }
+          
+          await dbConnect();
+          const user = (await User.findOne({
+            email: credentials.email,
+          }).lean()) as UserDocument | null;
+          
+          if (!user) return null;
+          
+          const ok = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          );
+          if (!ok) return null;
 
-        // What gets encoded into the JWT
-        return {
-          id: String(user._id),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          // What gets encoded into the JWT
+          return {
+            id: String(user._id),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -63,4 +77,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
