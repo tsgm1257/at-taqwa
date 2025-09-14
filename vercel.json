@@ -4,23 +4,5 @@
       "maxDuration": 30
     }
   },
-  "regions": ["bom1"],
-  "env": {
-    "MONGODB_URI": "@mongodb_uri",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "IMGBB_API_KEY": "@imgbb_api_key",
-    "SSLCZ_STORE_ID": "@sslcz_store_id",
-    "SSLCZ_STORE_PASSWD": "@sslcz_store_passwd",
-    "SSLCZ_IS_SANDBOX": "@sslcz_is_sandbox",
-    "BKASH_USERNAME": "@bkash_username",
-    "BKASH_PASSWORD": "@bkash_password",
-    "BKASH_APP_KEY": "@bkash_app_key",
-    "BKASH_APP_SECRET": "@bkash_app_secret",
-    "BKASH_SANDBOX": "@bkash_sandbox",
-    "NAGAD_MERCHANT_ID": "@nagad_merchant_id",
-    "NAGAD_PG_PUBLIC_KEY": "@nagad_pg_public_key",
-    "NAGAD_MERCHANT_PRIVATE_KEY": "@nagad_merchant_private_key",
-    "NAGAD_SANDBOX": "@nagad_sandbox"
-  }
+  "regions": ["bom1"]
 }

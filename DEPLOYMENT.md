@@ -7,41 +7,42 @@
 3. **Payment Gateway Accounts**: Set up accounts with SSLCommerz, bKash, and Nagad
 4. **Image Hosting**: Set up ImgBB account for image uploads
 
-## Environment Variables
+## Environment Variables Setup in Vercel
 
-You'll need to set up the following environment variables in Vercel:
+**IMPORTANT**: You need to set up these environment variables in your Vercel dashboard, NOT in the code.
+
+### Step-by-Step Setup:
+
+1. **Go to your Vercel dashboard**
+2. **Select your project** (at-taqwa)
+3. **Go to Settings → Environment Variables**
+4. **Add each variable** with the following names and values:
 
 ### Required Variables
 
-```bash
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/at-taqwa
+| Variable Name | Description | Example Value |
+|---------------|-------------|---------------|
+| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://username:password@cluster.mongodb.net/at-taqwa` |
+| `NEXTAUTH_SECRET` | NextAuth.js secret key | `your-super-secret-key-here` |
+| `NEXTAUTH_URL` | Your Vercel app URL | `https://your-app.vercel.app` |
+| `IMGBB_API_KEY` | ImgBB API key for image uploads | `your-imgbb-api-key` |
+| `SSLCZ_STORE_ID` | SSLCommerz store ID | `your-store-id` |
+| `SSLCZ_STORE_PASSWD` | SSLCommerz store password | `your-store-password` |
+| `SSLCZ_IS_SANDBOX` | SSLCommerz sandbox mode | `true` |
+| `BKASH_USERNAME` | bKash username | `your-bkash-username` |
+| `BKASH_PASSWORD` | bKash password | `your-bkash-password` |
+| `BKASH_APP_KEY` | bKash app key | `your-bkash-app-key` |
+| `BKASH_APP_SECRET` | bKash app secret | `your-bkash-app-secret` |
+| `BKASH_SANDBOX` | bKash sandbox mode | `true` |
+| `NAGAD_MERCHANT_ID` | Nagad merchant ID | `your-nagad-merchant-id` |
+| `NAGAD_PG_PUBLIC_KEY` | Nagad public key | `your-nagad-public-key` |
+| `NAGAD_MERCHANT_PRIVATE_KEY` | Nagad private key | `your-nagad-private-key` |
+| `NAGAD_SANDBOX` | Nagad sandbox mode | `true` |
 
-# NextAuth.js
-NEXTAUTH_SECRET=your-super-secret-key-here
-NEXTAUTH_URL=https://your-app.vercel.app
-
-# Image Upload (ImgBB)
-IMGBB_API_KEY=your-imgbb-api-key
-
-# SSLCommerz Payment Gateway
-SSLCZ_STORE_ID=your-store-id
-SSLCZ_STORE_PASSWD=your-store-password
-SSLCZ_IS_SANDBOX=true
-
-# bKash Payment Gateway
-BKASH_USERNAME=your-bkash-username
-BKASH_PASSWORD=your-bkash-password
-BKASH_APP_KEY=your-bkash-app-key
-BKASH_APP_SECRET=your-bkash-app-secret
-BKASH_SANDBOX=true
-
-# Nagad Payment Gateway
-NAGAD_MERCHANT_ID=your-nagad-merchant-id
-NAGAD_PG_PUBLIC_KEY=your-nagad-public-key
-NAGAD_MERCHANT_PRIVATE_KEY=your-nagad-private-key
-NAGAD_SANDBOX=true
-```
+### Minimum Required for Basic Functionality:
+- `MONGODB_URI`
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
 
 ## Deployment Steps
 
