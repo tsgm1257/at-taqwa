@@ -36,6 +36,12 @@ export default function AdminDashboard() {
   const [reports, setReports] = React.useState([]);
   const [donations, setDonations] = React.useState([]);
   const [fees, setFees] = React.useState([]);
+  const [stats, setStats] = React.useState({
+    totalMembers: 0,
+    activeProjects: 0,
+    pendingRequests: 0,
+    totalEvents: 0,
+  });
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -48,6 +54,7 @@ export default function AdminDashboard() {
           reportsResponse,
           donationsResponse,
           feesResponse,
+          statsResponse,
         ] = await Promise.all([
           fetch("/api/admin/events"),
           fetch("/api/admin/projects"),
@@ -56,6 +63,7 @@ export default function AdminDashboard() {
           fetch("/api/admin/reports"),
           fetch("/api/admin/donations"),
           fetch("/api/admin/fees"),
+          fetch("/api/stats"),
         ]);
 
         if (eventsResponse.ok) {
@@ -92,13 +100,26 @@ export default function AdminDashboard() {
           const feesData = await feesResponse.json();
           setFees(feesData.items || []);
         }
+
+        // Process stats
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          if (statsData.ok) {
+            setStats({
+              totalMembers: statsData.stats.activeMembers,
+              activeProjects: statsData.stats.activeProjects,
+              pendingRequests: membershipRequests.filter((r) => r.status === "pending").length,
+              totalEvents: events.length,
+            });
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
     };
 
     fetchData();
-  }, []);
+  }, [events.length, membershipRequests]);
 
   const adminFeatures = [
     {
@@ -279,7 +300,7 @@ export default function AdminDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              156
+              {stats.totalMembers}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Total Members
@@ -293,7 +314,7 @@ export default function AdminDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              12
+              {stats.activeProjects}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Active Projects
@@ -307,7 +328,7 @@ export default function AdminDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              5
+              {stats.pendingRequests}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Pending Requests
@@ -321,7 +342,7 @@ export default function AdminDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {events.length}
+              {stats.totalEvents}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Total Events

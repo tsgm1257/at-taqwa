@@ -18,14 +18,21 @@ export default function MemberDashboard() {
   const [donations, setDonations] = React.useState([]);
   const [fees, setFees] = React.useState<Fee[]>([]);
   const [announcements, setAnnouncements] = React.useState([]);
+  const [memberStats, setMemberStats] = React.useState({
+    totalDonations: 0,
+    totalContributed: 0,
+    eventsAttended: 0,
+    yearsActive: 0,
+  });
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const [donationsRes, feesRes, announcementsRes] = await Promise.all([
+        const [donationsRes, feesRes, announcementsRes, statsRes] = await Promise.all([
           fetch("/api/member/donations"),
           fetch("/api/member/fees"),
           fetch("/api/announcements"),
+          fetch("/api/member/stats"),
         ]);
 
         if (donationsRes.ok) {
@@ -41,6 +48,19 @@ export default function MemberDashboard() {
         if (announcementsRes.ok) {
           const announcementsData = await announcementsRes.json();
           setAnnouncements(announcementsData.announcements || []);
+        }
+
+        // Process member stats
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (statsData.ok) {
+            setMemberStats({
+              totalDonations: statsData.stats.totalDonations,
+              totalContributed: statsData.stats.totalContributed,
+              eventsAttended: statsData.stats.eventsAttended,
+              yearsActive: statsData.stats.yearsActive,
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -193,7 +213,7 @@ export default function MemberDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              12
+              {memberStats.totalDonations}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Total Donations
@@ -207,7 +227,7 @@ export default function MemberDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              BDT 15,000
+              BDT {memberStats.totalContributed.toLocaleString()}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Total Contributed
@@ -221,7 +241,7 @@ export default function MemberDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              6
+              {memberStats.eventsAttended}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Events Attended
@@ -235,7 +255,7 @@ export default function MemberDashboard() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              2
+              {memberStats.yearsActive}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
               Years Active

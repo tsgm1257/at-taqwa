@@ -19,12 +19,14 @@ import { donationInitSchema } from "@/lib/validators/donations";
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+
+  // Allow anonymous donations for quick donate functionality
+  // if (!userId) {
+  //   return NextResponse.json(
+  //     { ok: false, error: "Unauthorized" },
+  //     { status: 401 }
+  //   );
+  // }
 
   const body = await req.json().catch(() => null);
   const parsed = donationInitSchema.safeParse(body);
