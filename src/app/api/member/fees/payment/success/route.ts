@@ -16,6 +16,12 @@ export async function GET(req: Request) {
 
 async function handleCallback(req: Request) {
   try {
+    console.log("Fee payment callback endpoint reached:", {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries())
+    });
+
     // Handle both form data and query parameters
     let status, tran_id, val_id, amount, currency, value_a;
     
@@ -27,7 +33,9 @@ async function handleCallback(req: Request) {
       amount = formData.get("amount") as string;
       currency = formData.get("currency") as string;
       value_a = formData.get("value_a") as string; // Fee ID
-    } catch {
+      console.log("Parsed from form data");
+    } catch (error) {
+      console.log("Form data parsing failed, trying query parameters:", error);
       // If form data fails, try query parameters
       const url = new URL(req.url);
       status = url.searchParams.get("status");
@@ -36,6 +44,7 @@ async function handleCallback(req: Request) {
       amount = url.searchParams.get("amount");
       currency = url.searchParams.get("currency");
       value_a = url.searchParams.get("value_a"); // Fee ID
+      console.log("Parsed from query parameters");
     }
 
     console.log("Fee payment callback received:", {
@@ -96,24 +105,36 @@ async function handleCallback(req: Request) {
     }
 
     // Update fee status to paid
-    const updateResult = await Fee.findByIdAndUpdate(value_a, {
-      $set: {
-        status: "paid",
-        paidAmount: parseFloat(amount as string) || fee.amount,
-        paidAt: new Date(),
-        "meta.payment_tran_id": tran_id,
-        "meta.payment_val_id": val_id,
-        "meta.payment_validated_at": new Date(),
-      }
-    }, { new: true });
+    try {
+      const updateResult = await Fee.findByIdAndUpdate(value_a, {
+        $set: {
+          status: "paid",
+          paidAmount: parseFloat(amount as string) || fee.amount,
+          paidAt: new Date(),
+          "meta.payment_tran_id": tran_id,
+          "meta.payment_val_id": val_id,
+          "meta.payment_validated_at": new Date(),
+        }
+      }, { new: true });
 
-    console.log("Fee payment update result:", updateResult);
-    console.log("Fee payment completed successfully:", {
-      feeId: value_a,
-      amount: amount,
-      tran_id,
-      updatedStatus: updateResult?.status,
-    });
+      console.log("Fee payment update result:", updateResult);
+      console.log("Fee payment completed successfully:", {
+        feeId: value_a,
+        amount: amount,
+        tran_id,
+        updatedStatus: updateResult?.status,
+      });
+
+      if (!updateResult) {
+        console.error("Failed to update fee - no result returned");
+        const baseUrl = new URL(req.url).origin;
+        return NextResponse.redirect(`${baseUrl}/member/fees?error=update_failed&feeId=${value_a}`);
+      }
+    } catch (dbError) {
+      console.error("Database update error:", dbError);
+      const baseUrl = new URL(req.url).origin;
+      return NextResponse.redirect(`${baseUrl}/member/fees?error=db_error&feeId=${value_a}`);
+    }
 
     const baseUrl = new URL(req.url).origin;
     return NextResponse.redirect(`${baseUrl}/member/fees?success=payment_completed&feeId=${value_a}&amount=${amount}`);

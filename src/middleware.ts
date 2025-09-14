@@ -19,6 +19,14 @@ const GUARDS: { prefix: string; roles: Array<"Admin" | "Member" | "User"> }[] =
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Skip middleware for payment callback endpoints (they don't need authentication)
+  if (pathname.includes('/payment/') || 
+      pathname.includes('/test/') ||
+      pathname.includes('/api/member/fees/payment/') ||
+      pathname.includes('/api/donations/')) {
+    return NextResponse.next();
+  }
+
   // Only guard the prefixes we declare
   const guard = GUARDS.find((g) => pathname.startsWith(g.prefix));
   if (!guard) return NextResponse.next();
