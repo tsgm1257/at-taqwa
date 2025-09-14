@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
+
+export const dynamic = "force-dynamic";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";

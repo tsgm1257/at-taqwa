@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
+
+export const dynamic = "force-dynamic";
 import { donationInitSchema } from "@/lib/validators/donations";
 
 export async function POST(req: Request) {

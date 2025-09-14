@@ -6,6 +6,8 @@ import Report from "@/models/Report";
 import Donation from "@/models/Donation";
 import Fee from "@/models/Fee";
 
+export const dynamic = "force-dynamic";
+
 function monthRange(month: string) {
   // month = "YYYY-MM"
   const [y, m] = month.split("-").map(Number);
@@ -17,12 +19,18 @@ function monthRange(month: string) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   const { month, openingBalance, overwrite } = await req.json();
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    return NextResponse.json({ ok: false, error: "month must be YYYY-MM" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "month must be YYYY-MM" },
+      { status: 400 }
+    );
   }
 
   await dbConnect();
@@ -64,14 +72,16 @@ export async function POST(req: Request) {
   } else {
     if (overwrite) {
       report.income = income;
-      if (openingBalance !== undefined) report.openingBalance = Number(openingBalance);
+      if (openingBalance !== undefined)
+        report.openingBalance = Number(openingBalance);
     } else {
       // Merge: update/replace categories Donations & Monthly Fees only
       const others = (report.income || []).filter(
         (i: any) => !["Donations", "Monthly Fees"].includes(i.category)
       );
       report.income = [...others, ...income];
-      if (openingBalance !== undefined) report.openingBalance = Number(openingBalance);
+      if (openingBalance !== undefined)
+        report.openingBalance = Number(openingBalance);
     }
   }
 

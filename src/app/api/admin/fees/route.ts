@@ -5,12 +5,22 @@ import { dbConnect } from "@/lib/db";
 import Fee from "@/models/Fee";
 import User from "@/models/User";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if (session?.user && typeof session.user === "object" && "role" in session.user && session.user.role === "Admin") {
+  if (
+    session?.user &&
+    typeof session.user === "object" &&
+    "role" in session.user &&
+    session.user.role === "Admin"
+  ) {
     // proceed
   } else {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   await dbConnect();
@@ -18,7 +28,7 @@ export async function GET(req: Request) {
 
   const month = searchParams.get("month") || undefined;
   const status = searchParams.get("status") || undefined; // unpaid|partial|paid|waived
-  const role = searchParams.get("role") || undefined;     // Admin|Member
+  const role = searchParams.get("role") || undefined; // Admin|Member
   const page = Number(searchParams.get("page") || 1);
   const limit = Number(searchParams.get("limit") || 20);
   const skip = (page - 1) * limit;
@@ -44,7 +54,10 @@ export async function GET(req: Request) {
   if (userIds) q.userId = { $in: userIds };
 
   const [items, total] = await Promise.all([
-    Fee.find(q).sort({ month: -1 }).skip(skip).limit(limit)
+    Fee.find(q)
+      .sort({ month: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("userId", "name email role")
       .lean(),
     Fee.countDocuments(q),

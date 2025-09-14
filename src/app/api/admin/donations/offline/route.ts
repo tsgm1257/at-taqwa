@@ -7,10 +7,19 @@ import User from "@/models/User";
 import Project from "@/models/Project";
 import { adminOfflineDonationSchema } from "@/lib/validators/donations";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (session?.user && typeof session.user === "object" && (session.user as { role?: string }).role !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  if (
+    session?.user &&
+    typeof session.user === "object" &&
+    (session.user as { role?: string }).role !== "Admin"
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   let body: unknown;
@@ -21,9 +30,21 @@ export async function POST(req: Request) {
   }
   const parsed = adminOfflineDonationSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
-  const { email, userId, amount, currency, projectId, projectSlug, receiptUrl, note } = parsed.data;
+  const {
+    email,
+    userId,
+    amount,
+    currency,
+    projectId,
+    projectSlug,
+    receiptUrl,
+    note,
+  } = parsed.data;
 
   await dbConnect();
 
@@ -32,40 +53,51 @@ export async function POST(req: Request) {
   if (!resolvedUserId && email) {
     const u = await User.findOne({ email }, { _id: 1 }).lean();
     if (!u || !("_id" in u)) {
-      return NextResponse.json({ ok: false, error: "User email not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "User email not found" },
+        { status: 404 }
+      );
     }
     resolvedUserId = String((u as { _id: unknown })._id);
     if (!resolvedUserId) {
-        return NextResponse.json({ ok: false, error: "Provide userId or email" }, { status: 400 });
-      }
-
-  // Resolve project
-  let resolvedProjectId = projectId;
-  if (!resolvedProjectId && projectSlug) {
-    const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
-    if (!p || !("_id" in p)) {
-      return NextResponse.json({ ok: false, error: "Project not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Provide userId or email" },
+        { status: 400 }
+      );
     }
-    resolvedProjectId = String((p as { _id: unknown })._id);
+
+    // Resolve project
+    let resolvedProjectId = projectId;
+    if (!resolvedProjectId && projectSlug) {
+      const p = await Project.findOne({ slug: projectSlug }, { _id: 1 }).lean();
+      if (!p || !("_id" in p)) {
+        return NextResponse.json(
+          { ok: false, error: "Project not found" },
+          { status: 404 }
+        );
+      }
+      resolvedProjectId = String((p as { _id: unknown })._id);
+    }
+
+    // Create succeeded cash donation
+    const d = await Donation.create({
+      userId: resolvedUserId,
+      projectId: resolvedProjectId,
+      amount,
+      currency: currency || "BDT",
+      method: "cash",
+      status: "succeeded",
+      receiptUrl,
+      meta: { note, createdBy: session?.user?.email },
+    });
+
+    // Update project raisedAmount if donation linked to a project
+    if (resolvedProjectId) {
+      await Project.findByIdAndUpdate(resolvedProjectId, {
+        $inc: { raisedAmount: amount },
+      });
+    }
+
+    return NextResponse.json({ ok: true, id: String(d._id) }, { status: 201 });
   }
-
-  // Create succeeded cash donation
-  const d = await Donation.create({
-    userId: resolvedUserId,
-    projectId: resolvedProjectId,
-    amount,
-    currency: currency || "BDT",
-    method: "cash",
-    status: "succeeded",
-    receiptUrl,
-    meta: { note, createdBy: session?.user?.email },
-  });
-
-  // Update project raisedAmount if donation linked to a project
-  if (resolvedProjectId) {
-    await Project.findByIdAndUpdate(resolvedProjectId, { $inc: { raisedAmount: amount } });
-  }
-
-  return NextResponse.json({ ok: true, id: String(d._id) }, { status: 201 });
-}
 }

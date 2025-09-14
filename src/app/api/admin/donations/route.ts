@@ -4,21 +4,31 @@ import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import User from "@/models/User";
+
+export const dynamic = "force-dynamic";
 import Project from "@/models/Project";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if (session?.user && typeof session.user === "object" && "role" in session.user && session.user.role === "Admin") {
+  if (
+    session?.user &&
+    typeof session.user === "object" &&
+    "role" in session.user &&
+    session.user.role === "Admin"
+  ) {
     // proceed
   } else {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(
+      { ok: false, error: "Forbidden" },
+      { status: 403 }
+    );
   }
 
   await dbConnect();
 
   const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status") || undefined;   // initiated|pending|succeeded|failed|refunded
-  const method = searchParams.get("method") || undefined;   // sslcommerz|bkash|nagad|cash
+  const status = searchParams.get("status") || undefined; // initiated|pending|succeeded|failed|refunded
+  const method = searchParams.get("method") || undefined; // sslcommerz|bkash|nagad|cash
   const projectSlug = searchParams.get("projectSlug") || undefined;
   const email = searchParams.get("email") || undefined;
 
@@ -48,7 +58,10 @@ export async function GET(req: Request) {
   }
 
   const [items, total] = await Promise.all([
-    Donation.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    Donation.find(q)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("projectId", "title slug")
       .populate("userId", "name email role")
       .lean(),

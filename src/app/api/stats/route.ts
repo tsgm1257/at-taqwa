@@ -4,6 +4,8 @@ import Project from "@/models/Project";
 import Donation from "@/models/Donation";
 import MembershipRequest from "@/models/MembershipRequest";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     await dbConnect();

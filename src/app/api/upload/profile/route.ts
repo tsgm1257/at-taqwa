@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs"; // ensure Node runtime for File/Buffer
+export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
@@ -9,22 +10,34 @@ export async function POST(req: Request) {
   try {
     const key = process.env.IMGBB_API_KEY;
     if (!key) {
-      return NextResponse.json({ ok: false, error: "IMGBB_API_KEY missing" }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, error: "IMGBB_API_KEY missing" },
+        { status: 500 }
+      );
     }
 
     const form = await req.formData();
     const file = form.get("file") as File | null;
 
     if (!file) {
-      return NextResponse.json({ ok: false, error: "file is required" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "file is required" },
+        { status: 400 }
+      );
     }
 
     if (!ALLOWED.includes(file.type)) {
-      return NextResponse.json({ ok: false, error: "Only JPG, PNG, WEBP allowed" }, { status: 415 });
+      return NextResponse.json(
+        { ok: false, error: "Only JPG, PNG, WEBP allowed" },
+        { status: 415 }
+      );
     }
 
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ ok: false, error: "Max size 2MB" }, { status: 413 });
+      return NextResponse.json(
+        { ok: false, error: "Max size 2MB" },
+        { status: 413 }
+      );
     }
 
     // Convert to base64 for imgbb

@@ -5,10 +5,16 @@ import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
-  if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
 
   await dbConnect();
 

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Project from "@/models/Project";
+
+export const dynamic = "force-dynamic";
 import { projectCreateSchema } from "@/lib/validators/content";
 import { slugify } from "@/lib/slug";
 

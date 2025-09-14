@@ -5,11 +5,16 @@ import { dbConnect } from "@/lib/db";
 import Fee from "@/models/Fee";
 import User from "@/models/User";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
   if (!userId) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   await dbConnect();
@@ -24,7 +29,8 @@ export async function GET(req: Request) {
   const totals = items.reduce(
     (acc, f) => {
       acc.amount += f.amount || 0;
-      if (f.status !== "paid" && f.status !== "waived") acc.due += f.amount || 0;
+      if (f.status !== "paid" && f.status !== "waived")
+        acc.due += f.amount || 0;
       return acc;
     },
     { amount: 0, due: 0 }
