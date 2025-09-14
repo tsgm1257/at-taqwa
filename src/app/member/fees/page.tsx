@@ -84,6 +84,24 @@ export default function MemberFeesPage() {
         text: 'Payment was cancelled. You can try again anytime.'
       });
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'payment_invalid') {
+      setMessage({
+        type: 'error',
+        text: 'Payment was not valid. Please try again or contact support.'
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'invalid_callback') {
+      setMessage({
+        type: 'error',
+        text: 'Invalid payment callback. Please contact support.'
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'fee_not_found') {
+      setMessage({
+        type: 'error',
+        text: 'Fee record not found. Please contact support.'
+      });
+      window.history.replaceState({}, '', window.location.pathname);
     }
 
     // Auto-hide message after 5 seconds

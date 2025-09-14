@@ -5,13 +5,33 @@ import Fee from "@/models/Fee";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  return handleIPN(req);
+}
+
+export async function GET(req: Request) {
+  return handleIPN(req);
+}
+
+async function handleIPN(req: Request) {
   try {
-    const formData = await req.formData();
-    const status = formData.get("status") as string;
-    const tran_id = formData.get("tran_id") as string;
-    const val_id = formData.get("val_id") as string;
-    const amount = formData.get("amount") as string;
-    const value_a = formData.get("value_a") as string; // Fee ID
+    let status, tran_id, val_id, amount, value_a;
+    
+    try {
+      const formData = await req.formData();
+      status = formData.get("status") as string;
+      tran_id = formData.get("tran_id") as string;
+      val_id = formData.get("val_id") as string;
+      amount = formData.get("amount") as string;
+      value_a = formData.get("value_a") as string; // Fee ID
+    } catch {
+      // If form data fails, try query parameters
+      const url = new URL(req.url);
+      status = url.searchParams.get("status");
+      tran_id = url.searchParams.get("tran_id");
+      val_id = url.searchParams.get("val_id");
+      amount = url.searchParams.get("amount");
+      value_a = url.searchParams.get("value_a"); // Fee ID
+    }
 
     console.log("Fee payment IPN received:", {
       status,
@@ -29,7 +49,7 @@ export async function POST(req: Request) {
 
     // Update fee status if payment is successful
     if (status === "VALID" || status === "VALIDATED") {
-      await Fee.findByIdAndUpdate(value_a, {
+      const updateResult = await Fee.findByIdAndUpdate(value_a, {
         $set: {
           status: "paid",
           paidAmount: parseFloat(amount as string),
@@ -37,9 +57,12 @@ export async function POST(req: Request) {
           "meta.ipn_status": status,
           "meta.ipn_processed_at": new Date(),
         }
-      });
+      }, { new: true });
 
-      console.log("Fee payment IPN processed successfully:", value_a);
+      console.log("Fee payment IPN processed successfully:", {
+        feeId: value_a,
+        updatedStatus: updateResult?.status,
+      });
     }
 
     return NextResponse.json({ ok: true });

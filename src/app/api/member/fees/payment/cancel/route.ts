@@ -3,10 +3,27 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  return handleCallback(req);
+}
+
+export async function GET(req: Request) {
+  return handleCallback(req);
+}
+
+async function handleCallback(req: Request) {
   try {
-    const formData = await req.formData();
-    const tran_id = formData.get("tran_id") as string;
-    const value_a = formData.get("value_a") as string; // Fee ID
+    let tran_id, value_a;
+    
+    try {
+      const formData = await req.formData();
+      tran_id = formData.get("tran_id") as string;
+      value_a = formData.get("value_a") as string; // Fee ID
+    } catch {
+      // If form data fails, try query parameters
+      const url = new URL(req.url);
+      tran_id = url.searchParams.get("tran_id");
+      value_a = url.searchParams.get("value_a"); // Fee ID
+    }
 
     console.log("Fee payment cancelled:", {
       tran_id,
