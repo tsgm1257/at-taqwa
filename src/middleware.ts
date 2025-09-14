@@ -10,6 +10,10 @@ const GUARDS: { prefix: string; roles: Array<"Admin" | "Member" | "User"> }[] =
     // Members area allows Member and Admin
     { prefix: "/member", roles: ["Member", "Admin"] },
     { prefix: "/api/member", roles: ["Member", "Admin"] },
+
+    // Users area allows User, Member, and Admin
+    { prefix: "/user", roles: ["User", "Member", "Admin"] },
+    { prefix: "/api/user", roles: ["User", "Member", "Admin"] },
   ];
 
 export async function middleware(req: NextRequest) {
@@ -50,7 +54,9 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/member/:path*",
+    "/user/:path*",
     "/api/admin/:path*",
     "/api/member/:path*",
+    "/api/user/:path*",
   ],
 };

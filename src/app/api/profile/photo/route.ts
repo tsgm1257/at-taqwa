@@ -3,64 +3,144 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
-
-export const runtime = "nodejs"; // ensure Node runtime for Buffer/FormData
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { existsSync } from "fs";
 
 export async function POST(req: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
-    if (!file) {
-      return NextResponse.json({ ok: false, error: "No file provided" }, { status: 400 });
-    }
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ ok: false, error: "Only image files allowed" }, { status: 400 });
-    }
-    if (file.size > 2 * 1024 * 1024) { // 2MB guard
-      return NextResponse.json({ ok: false, error: "Max size 2MB" }, { status: 413 });
-    }
-
-    const apiKey = process.env.IMGBB_API_KEY;
-    if (!apiKey) throw new Error("IMGBB_API_KEY not set");
-
-    // Convert to base64 for imgbb
-    const bytes = await file.arrayBuffer();
-    const base64 = Buffer.from(bytes).toString("base64");
-
-    // Build form-data for imgbb
-    const uploadForm = new FormData();
-    uploadForm.append("image", base64);
-    uploadForm.append("name", `profile_${Date.now()}`);
-
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: "POST",
-      body: uploadForm,
-    });
-    const data = await res.json();
-
-    if (!data?.success) {
-      const msg = data?.error?.message || "imgbb upload failed";
-      return NextResponse.json({ ok: false, error: msg }, { status: 502 });
-    }
-
-    const url: string = data.data.url;
-    const deleteUrl: string | undefined = data.data.delete_url;
-
-    await dbConnect();
-    await User.updateOne(
-      { email: session.user.email },
-      { $set: { profilePicUrl: url } }
-    );
-
-    return NextResponse.json({ ok: true, url, deleteUrl }, { status: 200 });
-  } catch (e: any) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
     return NextResponse.json(
-      { ok: false, error: e?.message || "Upload error" },
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get("photo") as File;
+
+    if (!file) {
+      return NextResponse.json(
+        { ok: false, error: "No file provided" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { ok: false, error: "File must be an image" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: "File size must be less than 5MB" },
+        { status: 400 }
+      );
+    }
+
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = join(process.cwd(), "public", "uploads", "profiles");
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const fileExtension = file.name.split(".").pop();
+    const fileName = `${session.user.email.replace(
+      /[^a-zA-Z0-9]/g,
+      "_"
+    )}_${timestamp}.${fileExtension}`;
+    const filePath = join(uploadsDir, fileName);
+
+    // Convert file to buffer and save
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(filePath, buffer);
+
+    // Update user profile with new photo URL
+    await dbConnect();
+    const photoUrl = `/uploads/profiles/${fileName}`;
+
+    console.log("Uploading photo for user:", session.user.email);
+    console.log("Photo URL:", photoUrl);
+    console.log("File saved to:", filePath);
+
+    const user = await User.findOneAndUpdate(
+      { email: session.user.email },
+      {
+        avatarUrl: photoUrl,
+        updatedAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    console.log("Updated user profile:", user);
+    console.log("Avatar URL in database:", user.avatarUrl);
+
+    return NextResponse.json({
+      ok: true,
+      profile: user,
+      message: "Profile photo updated successfully",
+    });
+  } catch (error) {
+    console.error("Failed to upload profile photo:", error);
+    return NextResponse.json(
+      { ok: false, error: "Failed to upload photo" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    await dbConnect();
+
+    const user = await User.findOneAndUpdate(
+      { email: session.user.email },
+      {
+        avatarUrl: null,
+        updatedAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      profile: user,
+      message: "Profile photo removed successfully",
+    });
+  } catch (error) {
+    console.error("Failed to remove profile photo:", error);
+    return NextResponse.json(
+      { ok: false, error: "Failed to remove photo" },
       { status: 500 }
     );
   }

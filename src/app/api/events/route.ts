@@ -1,22 +1,112 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import Event from "@/models/Event";
 
-export async function GET(req: Request) {
-  await dbConnect();
-  const { searchParams } = new URL(req.url);
+export async function GET(req: NextRequest) {
+  try {
+    await dbConnect();
 
-  // Optional filters: by range
-  const start = searchParams.get("start");
-  const end = searchParams.get("end");
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category");
+    const status = searchParams.get("status");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const page = parseInt(searchParams.get("page") || "1");
 
-  const q: any = { visibility: "public" };
-  if (start || end) {
-    q.start = {};
-    if (start) q.start.$gte = new Date(start);
-    if (end) q.start.$lte = new Date(end);
+    // Build filter object
+    const filter: any = {};
+    if (category && category !== "all") {
+      filter.category = category;
+    }
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Fetch events with pagination
+    const events = await Event.find(filter)
+      .sort({ date: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Get total count for pagination
+    const total = await Event.countDocuments(filter);
+
+    return NextResponse.json({
+      success: true,
+      events,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch events" },
+      { status: 500 }
+    );
   }
+}
 
-  const items = await Event.find(q).sort({ start: 1 }).lean();
-  return NextResponse.json({ ok: true, items });
+export async function POST(req: NextRequest) {
+  try {
+    await dbConnect();
+
+    const body = await req.json();
+    const {
+      title,
+      description,
+      date,
+      time,
+      location,
+      category,
+      maxAttendees,
+      registrationRequired,
+      contactInfo,
+    } = body;
+
+    // Validate required fields
+    if (!title || !description || !date || !location || !category) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Create new event
+    const event = new Event({
+      title,
+      description,
+      date: new Date(date),
+      time,
+      location,
+      category,
+      maxAttendees: maxAttendees || null,
+      registrationRequired: registrationRequired || false,
+      contactInfo: contactInfo || null,
+      status: "upcoming",
+      attendees: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await event.save();
+
+    return NextResponse.json({
+      success: true,
+      event,
+      message: "Event created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating event:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
 }

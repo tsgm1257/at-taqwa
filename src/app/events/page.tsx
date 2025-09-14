@@ -1,444 +1,435 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Calendar,
   MapPin,
   Clock,
-  Users,
-  ArrowRight,
   Search,
-  Filter,
-  CalendarDays,
-  Calendar as CalendarIcon,
-  Plus,
-  Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
 import { useLanguage } from "@/app/providers";
 
-type Event = {
-  _id: string;
-  title: string;
-  description?: string;
-  start: string;
-  end: string;
-  location?: string;
-  category?: string;
-  maxAttendees?: number;
-  currentAttendees?: number;
-  registrationRequired?: boolean;
-  image?: string;
-};
+// Events will be fetched from API
 
 export default function EventsPage() {
   const { t } = useLanguage();
-  const [events, setEvents] = React.useState<Event[]>([]);
+  const [events, setEvents] = React.useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = React.useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [filterCategory, setFilterCategory] = React.useState("all");
-  const [viewMode, setViewMode] = React.useState<"grid" | "calendar">("grid");
 
+  // Fetch events from API
   React.useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/events`)
-      .then((res) => res.json())
-      .then((data) => {
-        setEvents(data.items || []);
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch("/api/events");
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data.events || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch events:", error);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setEvents([]);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchEvents();
   }, []);
 
-  const filteredEvents = React.useMemo(() => {
+  React.useEffect(() => {
     let filtered = events;
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (searchTerm) {
       filtered = filtered.filter(
-        (e) =>
-          e.title.toLowerCase().includes(query) ||
-          e.description?.toLowerCase().includes(query) ||
-          e.location?.toLowerCase().includes(query)
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          event.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    if (filterCategory !== "all") {
-      filtered = filtered.filter((e) => e.category === filterCategory);
+    if (selectedDate) {
+      const selectedDateStr = selectedDate.toISOString().split("T")[0];
+      filtered = filtered.filter((event) => event.date === selectedDateStr);
     }
 
-    // Sort by start date (upcoming first)
-    filtered = filtered.sort(
-      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
-    );
-
-    return filtered;
-  }, [events, searchQuery, filterCategory]);
+    setFilteredEvents(filtered);
+  }, [events, searchTerm, selectedDate]);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Extract just the date part to avoid timezone issues
+    const datePart = dateString.split("T")[0];
+    const [year, month, day] = datePart.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return date.toLocaleDateString("en-US", {
-      weekday: "short",
+      weekday: "long",
       year: "numeric",
-      month: "short",
+      month: "long",
       day: "numeric",
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "TBD";
+
+    // Convert 24-hour format to 12-hour format
+    const [hours, minutes] = timeString.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  // Calendar functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  };
+
+  const getEventsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    return events.filter((event) => {
+      // Handle both string and Date formats
+      const eventDate =
+        event.date instanceof Date
+          ? event.date.toISOString().split("T")[0]
+          : event.date.split("T")[0];
+      return eventDate === dateStr;
     });
   };
 
-  const getEventStatus = (event: Event) => {
-    const now = new Date();
-    const startDate = new Date(event.start);
-    const endDate = new Date(event.end);
-
-    if (now < startDate) {
-      return {
-        status: "upcoming",
-        color:
-          "bg-blue-100 text-blue-800 dark:bg-blue-800/40 dark:text-blue-200",
-      };
-    } else if (now >= startDate && now <= endDate) {
-      return {
-        status: "ongoing",
-        color:
-          "bg-green-100 text-green-800 dark:bg-green-800/40 dark:text-green-200",
-      };
-    } else {
-      return {
-        status: "past",
-        color:
-          "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-200",
-      };
-    }
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      if (direction === "prev") {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
   };
 
-  const getEventStatusText = (event: Event) => {
-    const { status } = getEventStatus(event);
-    switch (status) {
-      case "upcoming":
-        return t("events.statusUpcoming");
-      case "ongoing":
-        return t("events.statusOngoing");
-      case "past":
-        return t("events.statusPast");
-      default:
-        return "Unknown";
-    }
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
   };
 
-  const getCategoryColor = (category?: string) => {
-    switch (category) {
-      case "community":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-800/40 dark:text-purple-200";
-      case "charity":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-800/40 dark:text-emerald-200";
-      case "education":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-800/40 dark:text-blue-200";
-      case "religious":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-800/40 dark:text-amber-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-200";
-    }
+  const isSelected = (date: Date) => {
+    return selectedDate && date.toDateString() === selectedDate.toDateString();
   };
 
-  const getCategoryText = (category?: string) => {
-    switch (category) {
-      case "community":
-        return t("events.categoryCommunity");
-      case "charity":
-        return t("events.categoryCharity");
-      case "education":
-        return t("events.categoryEducation");
-      case "religious":
-        return t("events.categoryReligious");
-      default:
-        return t("events.categoryGeneral");
-    }
-  };
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
-  // Get unique categories for filter
-  const categories = React.useMemo(() => {
-    const cats = [...new Set(events.map((e) => e.category).filter(Boolean))];
-    return ["all", ...cats];
-  }, [events]);
-
-  // Calculate upcoming events count
-  const upcomingEvents = events.filter(
-    (e) => new Date(e.start) > new Date()
-  ).length;
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-white via-emerald-50/60 to-white dark:from-emerald-950 dark:via-emerald-950/40 dark:to-emerald-950 text-emerald-950 dark:text-emerald-50">
-      <GeometricBg />
+    <>
       <AnnouncementMarquee />
 
-      {/* Hero Section */}
-      <Section id="hero" className="pt-10 pb-14">
-        <div className="text-center max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
+      <Section id="events-hero" className="relative overflow-hidden">
+        <GeometricBg />
+        <div className="relative z-10 text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
+            className="text-4xl md:text-6xl font-bold text-emerald-950 dark:text-emerald-50 mb-6"
           >
-            <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              {t("events.subtitle")}
-            </div>
-
-            <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-              {t("events.title")}
-            </h1>
-
-            <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              {t("events.description")}
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {upcomingEvents} {t("events.upcomingCount")}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
-                <Users className="h-4 w-4" />
-                <span>{t("events.communityFocused")}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-200">
-                <CalendarIcon className="h-4 w-4" />
-                <span>{t("events.regularActivities")}</span>
-              </div>
-            </div>
-          </motion.div>
+            {t("events.title")}
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-emerald-700 dark:text-emerald-300 mb-8 max-w-3xl mx-auto"
+          >
+            {t("events.subtitle")}
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-lg text-emerald-600 dark:text-emerald-400 max-w-4xl mx-auto"
+          >
+            {t("events.description")}
+          </motion.p>
         </div>
       </Section>
 
-      {/* Search and Filter */}
-      <Section id="filters" className="py-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-emerald-600" />
-            <span className="text-sm font-medium">
-              {t("events.filterEvents")}
-            </span>
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-600" />
-              <input
-                type="text"
-                placeholder={t("events.searchPlaceholder")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-sm outline-none focus:border-emerald-500 w-48"
-              />
-            </div>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 text-sm outline-none focus:border-emerald-500"
-            >
-              <option value="all">{t("events.allCategories")}</option>
-              {categories.slice(1).map((category) => (
-                <option key={category} value={category}>
-                  {getCategoryText(category)}
-                </option>
-              ))}
-            </select>
-            <div className="flex rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-emerald-950/40 overflow-hidden">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`px-3 py-2 text-sm transition ${
-                  viewMode === "grid"
-                    ? "bg-emerald-600 text-white"
-                    : "text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                }`}
-              >
-                {t("events.gridView")}
-              </button>
-              <button
-                onClick={() => setViewMode("calendar")}
-                className={`px-3 py-2 text-sm transition ${
-                  viewMode === "calendar"
-                    ? "bg-emerald-600 text-white"
-                    : "text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                }`}
-              >
-                {t("events.calendarView")}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* Events Grid */}
-      <Section id="events-grid" className="py-10">
-        {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-6 shadow-sm animate-pulse"
-              >
-                <div className="h-48 bg-emerald-200 dark:bg-emerald-800 rounded-xl mb-4"></div>
-                <div className="h-6 w-3/4 bg-emerald-200 dark:bg-emerald-800 rounded mb-2"></div>
-                <div className="h-4 w-1/2 bg-emerald-200 dark:bg-emerald-800 rounded mb-4"></div>
-                <div className="h-4 w-full bg-emerald-200 dark:bg-emerald-800 rounded mb-2"></div>
-                <div className="h-4 w-2/3 bg-emerald-200 dark:bg-emerald-800 rounded"></div>
+      <Section
+        id="events-calendar"
+        className="bg-emerald-50/30 dark:bg-emerald-900/10 mt-16"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-emerald-900 rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-emerald-900 dark:text-emerald-100">
+                  {monthNames[currentDate.getMonth()]}{" "}
+                  {currentDate.getFullYear()}
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      setCurrentDate(today);
+                    }}
+                    className="px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-700 transition-colors"
+                  >
+                    Today
+                  </button>
+                  <button
+                    onClick={() => navigateMonth("prev")}
+                    className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </button>
+                  <button
+                    onClick={() => navigateMonth("next")}
+                    className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <CalendarDays className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-200 mb-2">
-              {t("events.noEventsFound")}
-            </h3>
-            <p className="text-emerald-700/70 dark:text-emerald-200/70">
-              {searchQuery || filterCategory !== "all"
-                ? t("events.noEventsFiltered")
-                : t("events.noEventsMessage")}
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event, index) => {
-              const eventStatus = getEventStatus(event);
-              return (
-                <motion.article
-                  key={event._id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-6 shadow-sm hover:shadow-md transition-all duration-300"
-                >
-                  {event.image && (
-                    <div className="h-48 bg-emerald-100 dark:bg-emerald-800/40 rounded-xl mb-4 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
 
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs rounded-full px-2 py-1 font-medium ${eventStatus.color}`}
-                      >
-                        {getEventStatusText(event)}
-                      </span>
-                      {event.category && (
-                        <span
-                          className={`text-xs rounded-full px-2 py-1 font-medium ${getCategoryColor(
-                            event.category
-                          )}`}
-                        >
-                          {getCategoryText(event.category)}
-                        </span>
-                      )}
-                    </div>
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2 mb-3">
+                {dayNames.map((day) => (
+                  <div
+                    key={day}
+                    className="text-center text-sm font-medium text-emerald-600 dark:text-emerald-400 py-2"
+                  >
+                    {day}
                   </div>
+                ))}
+              </div>
 
-                  <h2 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 mb-3">
-                    {event.title}
-                  </h2>
+              <div className="grid grid-cols-7 gap-2">
+                {getDaysInMonth(currentDate).map((day, index) => {
+                  if (!day) {
+                    return <div key={index} className="h-10" />;
+                  }
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-emerald-700/80 dark:text-emerald-200/80">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(event.start)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-emerald-700/80 dark:text-emerald-200/80">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {formatTime(event.start)} - {formatTime(event.end)}
-                      </span>
-                    </div>
-                    {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-emerald-700/80 dark:text-emerald-200/80">
-                        <MapPin className="h-4 w-4" />
-                        <span>{event.location}</span>
-                      </div>
-                    )}
-                    {event.maxAttendees && (
-                      <div className="flex items-center gap-2 text-sm text-emerald-700/80 dark:text-emerald-200/80">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          {event.currentAttendees || 0} / {event.maxAttendees}{" "}
-                          {t("events.attendees")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  const dayEvents = getEventsForDate(day);
+                  const hasEvents = dayEvents.length > 0;
 
-                  {event.description && (
-                    <p className="text-sm text-emerald-800/80 dark:text-emerald-50/80 mb-4 line-clamp-3">
-                      {event.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <Link
-                      href={`/events/${event._id}`}
-                      className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-semibold hover:bg-emerald-700 transition inline-flex items-center gap-2"
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedDate(day)}
+                      className={`h-10 w-10 rounded-lg text-sm font-medium transition-colors relative ${
+                        isToday(day)
+                          ? "bg-emerald-600 text-white"
+                          : isSelected(day)
+                          ? "bg-emerald-100 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100"
+                          : "hover:bg-emerald-50 dark:hover:bg-emerald-800 text-emerald-900 dark:text-emerald-100"
+                      }`}
                     >
-                      <Eye className="h-4 w-4" />
-                      {t("events.viewDetails")}
-                    </Link>
-                    {event.registrationRequired && (
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        {t("events.registrationRequired")}
-                      </span>
-                    )}
-                  </div>
-                </motion.article>
-              );
-            })}
+                      {day.getDate()}
+                      {hasEvents && (
+                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                          {dayEvents.slice(0, 3).map((_, eventIndex) => (
+                            <div
+                              key={eventIndex}
+                              className="w-1 h-1 bg-emerald-500 rounded-full"
+                            />
+                          ))}
+                          {dayEvents.length > 3 && (
+                            <div className="w-1 h-1 bg-emerald-300 rounded-full" />
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Clear selection button */}
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="w-full mt-4 text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Search and Events List */}
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                <input
+                  type="text"
+                  placeholder={t("events.searchPlaceholder")}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-emerald-200 dark:border-emerald-700 rounded-lg bg-white dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Events List */}
+            <div className="space-y-3">
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-emerald-600 dark:text-emerald-400">
+                    Loading events...
+                  </p>
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="h-16 w-16 text-emerald-300 dark:text-emerald-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
+                    {t("events.noEventsFound")}
+                  </h3>
+                  <p className="text-emerald-600 dark:text-emerald-400">
+                    {searchTerm || selectedDate
+                      ? t("events.noEventsFiltered")
+                      : t("events.noEventsMessage")}
+                  </p>
+                </div>
+              ) : (
+                filteredEvents.map((event, index) => (
+                  <motion.div
+                    key={event._id || event.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-white dark:bg-emerald-900 rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-800 dark:to-emerald-900 rounded-xl flex items-center justify-center">
+                          <Calendar className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              event.status === "upcoming"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                            }`}
+                          >
+                            {t(
+                              `events.status${
+                                event.status.charAt(0).toUpperCase() +
+                                event.status.slice(1)
+                              }`
+                            )}
+                          </span>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-300">
+                            {event.category}
+                          </span>
+                        </div>
+
+                        <h3 className="text-xl font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
+                          {event.title}
+                        </h3>
+
+                        <p
+                          className="text-emerald-700 dark:text-emerald-300 mb-4 overflow-hidden"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {event.description}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm text-emerald-600 dark:text-emerald-400">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>{formatDate(event.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>{formatTime(event.time || "")}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{event.location}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </Section>
 
-      {/* Call to Action */}
-      <Section id="cta" className="py-12">
-        <div className="rounded-3xl border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white p-8 text-center">
-          <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
-            {t("events.ctaTitle")}
-          </h3>
-          <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+      <Section
+        id="events-cta"
+        className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl mx-4 md:mx-8 lg:mx-16"
+      >
+        <div className="text-center py-16 px-8">
+          <h2 className="text-3xl font-bold mb-4">{t("events.ctaTitle")}</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
             {t("events.ctaDescription")}
           </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link
-              href="/contact"
-              className="rounded-xl bg-white text-emerald-700 px-6 py-3 font-semibold hover:bg-emerald-50 transition inline-flex items-center gap-2"
-            >
-              <Plus className="h-5 w-5" /> {t("events.proposeEvent")}
-            </Link>
-            <Link
-              href="/donate"
-              className="rounded-xl border border-white/60 px-6 py-3 font-semibold hover:bg-white/10 transition inline-flex items-center gap-2"
-            >
-              {t("events.supportEvents")} <ArrowRight className="h-4 w-4" />
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="bg-white text-emerald-600 px-8 py-3 rounded-lg font-semibold hover:bg-emerald-50 transition-colors">
+              {t("events.proposeEvent")}
+            </button>
+            <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-emerald-600 transition-colors">
+              {t("events.supportEvents")}
+            </button>
           </div>
         </div>
       </Section>
-    </div>
+    </>
   );
 }

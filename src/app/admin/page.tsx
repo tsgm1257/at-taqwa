@@ -12,13 +12,66 @@ import {
   UserPlus,
   Megaphone,
   DollarSign,
+  Calendar,
 } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
+import DonationHistory from "@/components/DonationHistory";
+import MonthlyFees from "@/components/MonthlyFees";
 
 export default function AdminDashboard() {
+  const [donations, setDonations] = React.useState([]);
+  const [fees, setFees] = React.useState([]);
+  const [events, setEvents] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [donationsResponse, feesResponse, eventsResponse] =
+          await Promise.all([
+            fetch("/api/admin/donations"),
+            fetch("/api/admin/fees"),
+            fetch("/api/admin/events"),
+          ]);
+
+        if (donationsResponse.ok) {
+          const donationsData = await donationsResponse.json();
+          setDonations(donationsData.items || []);
+        }
+
+        if (feesResponse.ok) {
+          const feesData = await feesResponse.json();
+          setFees(feesData.items || []);
+        }
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          setEvents(eventsData.events || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const adminFeatures = [
+    {
+      title: "My Profile",
+      description:
+        "Update your administrator profile, contact details, and system preferences.",
+      icon: Shield,
+      href: "/admin/profile",
+      color: "bg-purple-50 dark:bg-purple-900/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      stats: "Admin Profile",
+    },
     {
       title: "Manage Projects & Campaigns",
       description:
@@ -40,14 +93,24 @@ export default function AdminDashboard() {
       stats: "5 Pending Requests",
     },
     {
-      title: "Announcements & Events",
+      title: "Manage Events",
       description:
-        "Publish important notices, schedule meetings, and organize community events.",
+        "Create, schedule, and manage community events with attendee tracking and notifications.",
+      icon: Calendar,
+      href: "/admin/events",
+      color: "bg-orange-50 dark:bg-orange-900/20",
+      iconColor: "text-orange-600 dark:text-orange-400",
+      stats: `${events.length} Total Events`,
+    },
+    {
+      title: "Announcements",
+      description:
+        "Publish important notices, updates, and community communications.",
       icon: Megaphone,
       href: "/admin/announcements",
       color: "bg-purple-50 dark:bg-purple-900/20",
       iconColor: "text-purple-600 dark:text-purple-400",
-      stats: "3 Upcoming Events",
+      stats: "Active Announcements",
     },
     {
       title: "Financial Reports",
@@ -203,13 +266,27 @@ export default function AdminDashboard() {
             transition={{ duration: 0.6, delay: 0.7 }}
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-4 text-center"
           >
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              3
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {events.length}
             </div>
             <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-              Upcoming Events
+              Total Events
             </div>
           </motion.div>
+        </div>
+      </Section>
+
+      {/* Monthly Fees */}
+      <Section id="fees" className="py-10">
+        <div className="max-w-6xl mx-auto">
+          <MonthlyFees fees={fees} loading={loading} />
+        </div>
+      </Section>
+
+      {/* Donation History */}
+      <Section id="donations" className="py-10">
+        <div className="max-w-6xl mx-auto">
+          <DonationHistory donations={donations} loading={loading} />
         </div>
       </Section>
 
@@ -225,8 +302,14 @@ export default function AdminDashboard() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
-              href="/admin/members"
+              href="/admin/events"
               className="rounded-xl bg-white text-emerald-700 px-6 py-3 font-semibold hover:bg-emerald-50 transition inline-flex items-center gap-2"
+            >
+              <Calendar className="h-5 w-5" /> Manage Events
+            </Link>
+            <Link
+              href="/admin/members"
+              className="rounded-xl border border-white/60 px-6 py-3 font-semibold hover:bg-white/10 transition inline-flex items-center gap-2"
             >
               <UserPlus className="h-5 w-5" /> Manage Members
             </Link>

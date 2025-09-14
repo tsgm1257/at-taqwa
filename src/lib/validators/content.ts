@@ -4,10 +4,11 @@ export const projectCreateSchema = z.object({
   title: z.string().min(3),
   description: z.string().min(10),
   targetAmount: z.number().min(0),
-  coverImageUrl: z.string().url().optional(),
+  category: z.string().min(1),
+  image: z.string().url().optional().or(z.literal("")),
   status: z.enum(["active", "completed", "paused"]).optional(),
-  startDate: z.string().datetime().optional(), // ISO strings from client
-  endDate: z.string().datetime().optional(),
+  startDate: z.string().min(1), // Date strings from form inputs
+  endDate: z.string().optional().or(z.literal("")),
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();

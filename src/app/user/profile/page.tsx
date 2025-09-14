@@ -13,15 +13,16 @@ import {
   X,
   Camera,
   Shield,
+  Clock,
   CheckCircle,
-  CreditCard,
-  DollarSign,
+  AlertCircle,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
 
-type MemberProfile = {
+type UserProfile = {
   _id: string;
   name: string;
   email: string;
@@ -33,18 +34,9 @@ type MemberProfile = {
   updatedAt: string;
 };
 
-type MembershipInfo = {
-  memberSince: string;
-  totalFees: number;
-  paidFees: number;
-  pendingFees: number;
-  lastPayment?: string;
-};
-
-export default function MemberProfilePage() {
-  const [profile, setProfile] = React.useState<MemberProfile | null>(null);
-  const [membershipInfo, setMembershipInfo] =
-    React.useState<MembershipInfo | null>(null);
+export default function UserProfilePage() {
+  const { data: session } = useSession();
+  const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -55,11 +47,17 @@ export default function MemberProfilePage() {
     address: "",
   });
 
+  React.useEffect(() => {
+    fetchProfile();
+  }, []);
+
   const fetchProfile = async () => {
     try {
       const response = await fetch("/api/profile");
       if (response.ok) {
         const data = await response.json();
+        console.log("Profile data:", data.profile);
+        console.log("Profile photo URL:", data.profile?.avatarUrl);
         setProfile(data.profile);
         setFormData({
           name: data.profile.name || "",
@@ -73,56 +71,6 @@ export default function MemberProfilePage() {
       setLoading(false);
     }
   };
-
-  const fetchMembershipInfo = React.useCallback(async () => {
-    try {
-      const response = await fetch("/api/member/fees");
-      if (response.ok) {
-        const data = await response.json();
-        const fees = data.items || [];
-        const totalFees = fees.reduce(
-          (sum: number, fee: { amount: number }) => sum + fee.amount,
-          0
-        );
-        const paidFees = fees
-          .filter((fee: { status: string }) => fee.status === "paid")
-          .reduce(
-            (sum: number, fee: { amount: number }) => sum + fee.amount,
-            0
-          );
-        const pendingFees = fees
-          .filter((fee: { status: string }) => fee.status === "pending")
-          .reduce(
-            (sum: number, fee: { amount: number }) => sum + fee.amount,
-            0
-          );
-        const lastPayment = fees.find(
-          (fee: { status: string; paidDate?: string }) =>
-            fee.status === "paid" && fee.paidDate
-        )?.paidDate;
-
-        setMembershipInfo({
-          memberSince: profile?.createdAt || "",
-          totalFees,
-          paidFees,
-          pendingFees,
-          lastPayment,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch membership info:", error);
-    }
-  }, [profile]);
-
-  React.useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  React.useEffect(() => {
-    if (profile) {
-      fetchMembershipInfo();
-    }
-  }, [profile, fetchMembershipInfo]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -237,15 +185,6 @@ export default function MemberProfilePage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-BD", {
-      style: "currency",
-      currency: "BDT",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const getRoleColor = (role: string) => {
     switch (role) {
       case "Admin":
@@ -277,7 +216,7 @@ export default function MemberProfilePage() {
       <div className="relative min-h-screen bg-gradient-to-b from-white via-emerald-50/60 to-white dark:from-emerald-950 dark:via-emerald-950/40 dark:to-emerald-950 text-emerald-950 dark:text-emerald-50">
         <GeometricBg />
         <AnnouncementMarquee />
-        <Section id="loading" className="pt-20 pb-10">
+        <Section className="pt-20 pb-10">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
               <div className="h-8 w-64 bg-emerald-200 dark:bg-emerald-800 rounded mb-6"></div>
@@ -303,7 +242,7 @@ export default function MemberProfilePage() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-xs uppercase tracking-wider text-emerald-700/80 dark:text-emerald-200/80">
-              Member Profile
+              User Profile
             </div>
 
             <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
@@ -311,9 +250,8 @@ export default function MemberProfilePage() {
             </h1>
 
             <p className="mt-4 text-emerald-800/80 dark:text-emerald-50/80 max-w-2xl mx-auto">
-              Manage your member profile and track your membership status.
-              Access exclusive member features and stay updated with community
-              activities.
+              Manage your personal information and account settings. Keep your
+              profile up to date to stay connected with the community.
             </p>
           </motion.div>
         </div>
@@ -429,13 +367,13 @@ export default function MemberProfilePage() {
                   )}
                 </div>
                 <div className="flex items-center justify-center gap-2">
-                  {getRoleIcon(profile?.role || "Member")}
+                  {getRoleIcon(profile?.role || "User")}
                   <span
                     className={`font-semibold ${getRoleColor(
-                      profile?.role || "Member"
+                      profile?.role || "User"
                     )}`}
                   >
-                    {profile?.role || "Member"}
+                    {profile?.role || "User"}
                   </span>
                 </div>
               </div>
@@ -546,8 +484,8 @@ export default function MemberProfilePage() {
         </div>
       </Section>
 
-      {/* Membership Status */}
-      <Section id="membership" className="py-10">
+      {/* Account Status */}
+      <Section id="status" className="py-10">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -556,83 +494,61 @@ export default function MemberProfilePage() {
             className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 p-8"
           >
             <h3 className="text-xl font-bold text-emerald-900 dark:text-emerald-100 mb-6">
-              Membership Status
+              Account Status
             </h3>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-green-50 dark:bg-green-800/20">
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                 <div>
                   <div className="font-semibold text-green-900 dark:text-green-100">
-                    Active Member
+                    Account Active
                   </div>
                   <div className="text-sm text-green-700/70 dark:text-green-200/70">
-                    You have full access to member features
+                    Your account is active and verified
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-800/20">
-                <CreditCard className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 <div>
                   <div className="font-semibold text-blue-900 dark:text-blue-100">
-                    Monthly Fees
+                    {profile?.role === "User" ? "Regular User" : profile?.role}
                   </div>
                   <div className="text-sm text-blue-700/70 dark:text-blue-200/70">
-                    Track your monthly membership fees
+                    {profile?.role === "User"
+                      ? "Apply for membership to access more features"
+                      : "You have full access to member features"}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Fee Summary */}
-            {membershipInfo && (
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-xl bg-emerald-50 dark:bg-emerald-800/20">
-                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(membershipInfo.totalFees)}
-                  </div>
-                  <div className="text-sm text-emerald-700/70 dark:text-emerald-200/70">
-                    Total Fees
-                  </div>
-                </div>
-
-                <div className="text-center p-4 rounded-xl bg-green-50 dark:bg-green-800/20">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(membershipInfo.paidFees)}
-                  </div>
-                  <div className="text-sm text-green-700/70 dark:text-green-200/70">
-                    Paid
+            {profile?.role === "User" && (
+              <div className="mt-6 p-4 rounded-xl bg-yellow-50 dark:bg-yellow-800/20 border border-yellow-200 dark:border-yellow-800/40">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  <div>
+                    <div className="font-semibold text-yellow-900 dark:text-yellow-100">
+                      Upgrade to Member
+                    </div>
+                    <div className="text-sm text-yellow-700/70 dark:text-yellow-200/70">
+                      Apply for membership to access exclusive features, monthly
+                      fees tracking, and more.
+                    </div>
                   </div>
                 </div>
-
-                <div className="text-center p-4 rounded-xl bg-yellow-50 dark:bg-yellow-800/20">
-                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {formatCurrency(membershipInfo.pendingFees)}
-                  </div>
-                  <div className="text-sm text-yellow-700/70 dark:text-yellow-200/70">
-                    Pending
-                  </div>
+                <div className="mt-4">
+                  <a
+                    href="/membership/apply"
+                    className="inline-flex items-center gap-2 rounded-xl bg-yellow-600 text-white px-4 py-2 font-semibold hover:bg-yellow-700 transition"
+                  >
+                    Apply for Membership
+                  </a>
                 </div>
               </div>
             )}
-
-            <div className="mt-6 flex gap-4">
-              <a
-                href="/member/fees"
-                className="rounded-xl bg-emerald-600 text-white px-6 py-3 font-semibold hover:bg-emerald-700 transition inline-flex items-center gap-2"
-              >
-                <CreditCard className="h-4 w-4" />
-                View Fees
-              </a>
-              <a
-                href="/member/donations"
-                className="rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 px-6 py-3 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition inline-flex items-center gap-2"
-              >
-                <DollarSign className="h-4 w-4" />
-                View Donations
-              </a>
-            </div>
           </motion.div>
         </div>
       </Section>

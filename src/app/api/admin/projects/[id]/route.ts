@@ -36,8 +36,10 @@ export async function PATCH(
   if (parsed.data.startDate) {
     update.startDate = new Date(parsed.data.startDate);
   }
-  if (parsed.data.endDate) {
+  if (parsed.data.endDate && parsed.data.endDate !== "") {
     update.endDate = new Date(parsed.data.endDate);
+  } else if (parsed.data.endDate === "") {
+    update.endDate = undefined;
   }
 
   // Generate slug if title is being updated
@@ -62,7 +64,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-
   if ((session?.user as { role?: string })?.role !== "Admin") {
     return NextResponse.json(
       { ok: false, error: "Forbidden" },

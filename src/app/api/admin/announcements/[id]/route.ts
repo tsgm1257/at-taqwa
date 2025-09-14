@@ -1,44 +1,215 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { dbConnect } from "@/lib/db";
 import Announcement from "@/models/Announcement";
-import { announcementUpdateSchema } from "@/lib/validators/content";
+import { z } from "zod";
+import { Types } from "mongoose";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if ((session?.user?.role ?? null) !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+const updateAnnouncementSchema = z.object({
+  title: z.string().min(1).optional(),
+  body: z.string().min(1).optional(),
+  pinned: z.boolean().optional(),
+  marquee: z.boolean().optional(),
+  visibleTo: z.enum(["all", "members", "admins"]).optional(),
+  publishedAt: z.string().optional(),
+});
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user?.role !== "Admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json(
+        { error: "Invalid announcement ID" },
+        { status: 400 }
+      );
+    }
+
+    const announcement = await Announcement.findById(params.id).lean();
+
+    if (!announcement) {
+      return NextResponse.json(
+        { error: "Announcement not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      item: announcement,
+    });
+  } catch (error) {
+    console.error("Failed to fetch announcement:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch announcement" },
+      { status: 500 }
+    );
   }
-
-  const body = await req.json();
-  const parsed = announcementUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  await dbConnect();
-
-  const update: Record<string, unknown> = { ...parsed.data };
-  if (parsed.data.publishedAt) {
-    update.publishedAt = new Date(parsed.data.publishedAt);
-  }
-
-  const item = await Announcement.findByIdAndUpdate(params.id, update, { new: true });
-  if (!item) {
-    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true, item });
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if ((session?.user?.role ?? null) !== "Admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user?.role !== "Admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json(
+        { error: "Invalid announcement ID" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const parsed = updateAnnouncementSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = { ...parsed.data };
+
+    if (parsed.data.publishedAt) {
+      updateData.publishedAt = new Date(parsed.data.publishedAt);
+    }
+
+    const announcement = await Announcement.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!announcement) {
+      return NextResponse.json(
+        { error: "Announcement not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      item: announcement,
+    });
+  } catch (error) {
+    console.error("Failed to update announcement:", error);
+    return NextResponse.json(
+      { error: "Failed to update announcement" },
+      { status: 500 }
+    );
   }
-  await dbConnect();
-  const res = await Announcement.findByIdAndDelete(params.id);
-  if (!res) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
-  return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user?.role !== "Admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json(
+        { error: "Invalid announcement ID" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const parsed = updateAnnouncementSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = { ...parsed.data };
+
+    if (parsed.data.publishedAt) {
+      updateData.publishedAt = new Date(parsed.data.publishedAt);
+    }
+
+    const announcement = await Announcement.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!announcement) {
+      return NextResponse.json(
+        { error: "Announcement not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      item: announcement,
+    });
+  } catch (error) {
+    console.error("Failed to update announcement:", error);
+    return NextResponse.json(
+      { error: "Failed to update announcement" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user?.role !== "Admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!Types.ObjectId.isValid(params.id)) {
+      return NextResponse.json(
+        { error: "Invalid announcement ID" },
+        { status: 400 }
+      );
+    }
+
+    const announcement = await Announcement.findByIdAndDelete(params.id);
+
+    if (!announcement) {
+      return NextResponse.json(
+        { error: "Announcement not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: "Announcement deleted successfully",
+    });
+  } catch (error) {
+    console.error("Failed to delete announcement:", error);
+    return NextResponse.json(
+      { error: "Failed to delete announcement" },
+      { status: 500 }
+    );
+  }
 }

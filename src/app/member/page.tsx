@@ -7,8 +7,42 @@ import { User, CreditCard, Heart, Bell, ArrowRight } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
 import AnnouncementMarquee from "@/components/AnnouncementMarquee";
+import DonationHistory from "@/components/DonationHistory";
+import MonthlyFees from "@/components/MonthlyFees";
 
 export default function MemberDashboard() {
+  const [donations, setDonations] = React.useState([]);
+  const [fees, setFees] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [donationsResponse, feesResponse] = await Promise.all([
+          fetch("/api/member/donations"),
+          fetch("/api/member/fees"),
+        ]);
+
+        if (donationsResponse.ok) {
+          const donationsData = await donationsResponse.json();
+          setDonations(donationsData.items || []);
+        }
+
+        if (feesResponse.ok) {
+          const feesData = await feesResponse.json();
+          setFees(feesData.items || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const memberFeatures = [
     {
       title: "My Profile",
@@ -202,6 +236,20 @@ export default function MemberDashboard() {
               Years Active
             </div>
           </motion.div>
+        </div>
+      </Section>
+
+      {/* Monthly Fees */}
+      <Section id="fees" className="py-10">
+        <div className="max-w-6xl mx-auto">
+          <MonthlyFees fees={fees} loading={loading} />
+        </div>
+      </Section>
+
+      {/* Donation History */}
+      <Section id="donations" className="py-10">
+        <div className="max-w-6xl mx-auto">
+          <DonationHistory donations={donations} loading={loading} />
         </div>
       </Section>
 

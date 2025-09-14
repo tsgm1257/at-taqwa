@@ -17,6 +17,9 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
+  X,
+  Save,
+  Upload,
 } from "lucide-react";
 import Section from "@/components/Section";
 import GeometricBg from "@/components/GeometricBg";
@@ -25,6 +28,7 @@ import AnnouncementMarquee from "@/components/AnnouncementMarquee";
 type Project = {
   _id: string;
   title: string;
+  slug: string;
   description: string;
   targetAmount: number;
   currentAmount: number;
@@ -44,6 +48,17 @@ export default function AdminProjectsPage() {
   const [editingProject, setEditingProject] = React.useState<Project | null>(
     null
   );
+  const [formData, setFormData] = React.useState({
+    title: "",
+    description: "",
+    targetAmount: "",
+    startDate: "",
+    endDate: "",
+    category: "",
+    status: "active" as "active" | "completed" | "paused",
+    image: "",
+  });
+  const [formLoading, setFormLoading] = React.useState(false);
 
   React.useEffect(() => {
     fetchProjects();
@@ -78,6 +93,93 @@ export default function AdminProjectsPage() {
       console.error("Failed to delete project:", error);
       alert("Failed to delete project");
     }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      targetAmount: "",
+      startDate: "",
+      endDate: "",
+      category: "",
+      status: "active",
+      image: "",
+    });
+    setShowCreateForm(false);
+    setEditingProject(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+
+    try {
+      const projectData = {
+        ...formData,
+        targetAmount: parseFloat(formData.targetAmount),
+        currentAmount: 0,
+      };
+
+      const url = editingProject
+        ? `/api/admin/projects/${editingProject._id}`
+        : "/api/admin/projects";
+
+      const method = editingProject ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (response.ok) {
+        await fetchProjects(); // Refresh the projects list
+        resetForm();
+        alert(
+          editingProject
+            ? "Project updated successfully!"
+            : "Project created successfully!"
+        );
+      } else {
+        const error = await response.json();
+        alert(error.message || "Failed to save project");
+      }
+    } catch (error) {
+      console.error("Failed to save project:", error);
+      alert("Failed to save project");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setFormData({
+      title: project.title,
+      description: project.description,
+      targetAmount: project.targetAmount.toString(),
+      startDate: project.startDate.split("T")[0], // Convert to YYYY-MM-DD format
+      endDate: project.endDate ? project.endDate.split("T")[0] : "",
+      category: project.category,
+      status: project.status,
+      image: project.image || "",
+    });
+    setEditingProject(project);
+    setShowCreateForm(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -371,7 +473,7 @@ export default function AdminProjectsPage() {
 
                 <div className="flex items-center justify-between">
                   <Link
-                    href={`/projects/${project._id}`}
+                    href={`/projects/${project.slug || project._id}`}
                     className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-semibold hover:bg-emerald-700 transition inline-flex items-center gap-2"
                   >
                     <Eye className="h-4 w-4" />
@@ -379,7 +481,7 @@ export default function AdminProjectsPage() {
                   </Link>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setEditingProject(project)}
+                      onClick={() => handleEditProject(project)}
                       className="rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 px-4 py-2 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition inline-flex items-center gap-2"
                     >
                       <Edit className="h-4 w-4" />
@@ -425,6 +527,189 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       </Section>
+
+      {/* Project Form Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white dark:bg-emerald-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                {editingProject ? "Edit Project" : "Create New Project"}
+              </h2>
+              <button
+                onClick={resetForm}
+                className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-lg transition"
+              >
+                <X className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                    Project Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="Enter project title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                    <option value="Community">Community</option>
+                    <option value="Charity">Charity</option>
+                    <option value="Education">Education</option>
+                    <option value="Religious">Religious</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  required
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Describe your project goals and impact"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                    Target Amount (BDT) *
+                  </label>
+                  <input
+                    type="number"
+                    name="targetAmount"
+                    value={formData.targetAmount}
+                    onChange={handleInputChange}
+                    required
+                    min="1"
+                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                >
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+                  Project Image URL{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    (Optional)
+                  </span>
+                </label>
+                <input
+                  type="url"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-800/50 text-emerald-900 dark:text-emerald-100 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="https://example.com/image.jpg (optional)"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="flex-1 rounded-xl bg-emerald-600 text-white px-6 py-3 font-semibold hover:bg-emerald-700 transition inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {formLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {editingProject ? "Updating..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      {editingProject ? "Update Project" : "Create Project"}
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-6 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

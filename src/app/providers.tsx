@@ -64,9 +64,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider
-        attribute="data-theme"
+        attribute="class"
         defaultTheme="light"
         enableSystem={false}
+        disableTransitionOnChange={false}
+        storageKey="at-taqwa-theme"
       >
         <LanguageContext.Provider value={{ locale, setLocale, t }}>
           {children}

@@ -2,26 +2,19 @@
 import React from "react";
 import Link from "next/link";
 import Section from "./Section";
-import { Search, Sun, Moon, Globe2, LogIn, LogOut } from "lucide-react";
+import { Search, Globe2, LogIn, LogOut } from "lucide-react";
 import { useLanguage } from "@/app/providers";
 import { useSession, signIn, signOut } from "next-auth/react";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const { locale, setLocale, t } = useLanguage();
   const { data: session, status } = useSession();
 
-  // simple theme toggle hook-in (optional; wire to your theme system)
-  const [isDark, setIsDark] = React.useState(false);
-  React.useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [isDark]);
-
   return (
     <>
       {/* Main Navbar */}
-      <header className="sticky top-0 z-40 border-b border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-emerald-950/60 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <header className="sticky top-0 z-50 border-b border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-emerald-950/60 backdrop-blur supports-[backdrop-filter]:bg-white/70">
         <Section
           id="main-navbar"
           className="flex items-center justify-between py-3"
@@ -102,14 +95,7 @@ export default function Navbar() {
               </button>
 
               {/* Theme Toggle */}
-              <button
-                aria-label="Toggle Theme"
-                className="rounded-full p-2 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 transition"
-                onClick={() => setIsDark((v) => !v)}
-              >
-                <Sun className="h-4 w-4 hidden dark:block" />
-                <Moon className="h-4 w-4 dark:hidden" />
-              </button>
+              <ThemeToggle />
 
               {/* Auth Button */}
               {status === "loading" ? (
@@ -117,7 +103,13 @@ export default function Navbar() {
               ) : session ? (
                 <div className="flex items-center gap-2">
                   <Link
-                    href={session.user?.role === "Admin" ? "/admin" : "/member"}
+                    href={
+                      session.user?.role === "Admin"
+                        ? "/admin"
+                        : session.user?.role === "Member"
+                        ? "/member"
+                        : "/user"
+                    }
                     className="text-sm text-emerald-700 dark:text-emerald-200 hover:text-emerald-600 dark:hover:text-emerald-300 transition font-medium hidden sm:inline"
                   >
                     {t("nav.dashboard")}
