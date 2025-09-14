@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
-import { sslcommerzService } from "@/lib/sslcommerz";
+import { sslcommerzDirectService } from "@/lib/sslcommerz-direct";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     // Validate the payment
     if (status === "VALID" || status === "VALIDATED") {
       try {
-        const validationResult = await sslcommerzService.validatePayment(
+        const validationResult = await sslcommerzDirectService.validatePayment(
           val_id as string,
           parseFloat(amount as string),
           currency as string

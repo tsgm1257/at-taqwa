@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sslcommerzService } from "@/lib/sslcommerz";
+import { sslcommerzDirectService } from "@/lib/sslcommerz-direct";
 import fetch from 'node-fetch';
 
 // Polyfill fetch for Node.js environment
@@ -56,7 +56,7 @@ export async function GET() {
       value_d: "Test payment",
     };
 
-    const result = await sslcommerzService.initiatePayment(testConfig);
+    const result = await sslcommerzDirectService.initiatePayment(testConfig);
     
     return NextResponse.json({
       status: "success",

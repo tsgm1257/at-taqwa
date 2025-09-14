@@ -1,16 +1,4 @@
-import SSLCommerzPayment from 'sslcommerz-lts';
-import { env } from './env';
 import fetch from 'node-fetch';
-
-// Polyfill fetch for Node.js environment
-if (typeof globalThis.fetch === 'undefined') {
-  globalThis.fetch = fetch as any;
-}
-
-// Also set it on global for compatibility
-if (typeof global.fetch === 'undefined') {
-  global.fetch = fetch as any;
-}
 
 export interface SSLCommerzConfig {
   store_id: string;
@@ -41,19 +29,24 @@ export interface SSLCommerzConfig {
   value_d: string;
 }
 
-export class SSLCommerzService {
-  private sslcommerz: SSLCommerzPayment;
+export class SSLCommerzDirectService {
+  private storeId: string;
+  private storePasswd: string;
+  private isSandbox: boolean;
+  private baseUrl: string;
 
   constructor() {
-    const storeId = process.env.SSLCZ_STORE_ID;
-    const storePasswd = process.env.SSLCZ_STORE_PASSWD;
-    const isSandbox = process.env.SSLCZ_IS_SANDBOX === "true";
+    this.storeId = process.env.SSLCZ_STORE_ID!;
+    this.storePasswd = process.env.SSLCZ_STORE_PASSWD!;
+    this.isSandbox = process.env.SSLCZ_IS_SANDBOX === "true";
     
-    if (!storeId || !storePasswd) {
+    if (!this.storeId || !this.storePasswd) {
       throw new Error("SSLCommerz credentials not configured. Please set SSLCZ_STORE_ID and SSLCZ_STORE_PASSWD environment variables.");
     }
     
-    this.sslcommerz = new SSLCommerzPayment(storeId, storePasswd, isSandbox);
+    this.baseUrl = this.isSandbox 
+      ? "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
+      : "https://securepay.sslcommerz.com/gwprocess/v4/api.php";
   }
 
   async initiatePayment(config: Partial<SSLCommerzConfig>): Promise<{
@@ -65,8 +58,8 @@ export class SSLCommerzService {
   }> {
     try {
       const paymentData: SSLCommerzConfig = {
-        store_id: process.env.SSLCZ_STORE_ID!,
-        store_passwd: process.env.SSLCZ_STORE_PASSWD!,
+        store_id: this.storeId,
+        store_passwd: this.storePasswd,
         total_amount: config.total_amount || 0,
         currency: config.currency || 'BDT',
         tran_id: config.tran_id || '',
@@ -94,10 +87,32 @@ export class SSLCommerzService {
         ...config
       };
 
-      const result = await this.sslcommerz.init(paymentData);
+      console.log("Making direct SSLCommerz API call to:", this.baseUrl);
+      console.log("Payment data:", {
+        store_id: paymentData.store_id.substring(0, 4) + "***",
+        total_amount: paymentData.total_amount,
+        currency: paymentData.currency,
+        tran_id: paymentData.tran_id
+      });
+
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(paymentData as any).toString()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("SSLCommerz API response:", result);
+      
       return result;
     } catch (error) {
-      console.error('SSLCommerz payment initiation error:', error);
+      console.error('SSLCommerz direct payment initiation error:', error);
       throw new Error('Failed to initiate payment');
     }
   }
@@ -123,40 +138,36 @@ export class SSLCommerzService {
     risk_title: string;
   }> {
     try {
-      const result = await this.sslcommerz.validate({
-        val_id: tran_id,
-        store_id: process.env.SSLCZ_STORE_ID!,
-        store_passwd: process.env.SSLCZ_STORE_PASSWD!,
-        format: 'json'
-      });
-      return result;
-    } catch (error) {
-      console.error('SSLCommerz payment validation error:', error);
-      throw new Error('Failed to validate payment');
-    }
-  }
+      const validationUrl = this.isSandbox 
+        ? "https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php"
+        : "https://securepay.sslcommerz.com/validator/api/validationserverAPI.php";
 
-  async refundPayment(refund_amount: number, refund_remarks: string, bank_tran_id: string, refe_id: string): Promise<{
-    status: string;
-    refund_ref_id: string;
-    refund_amount: number;
-    refund_remarks: string;
-  }> {
-    try {
-      const result = await this.sslcommerz.initiateRefund({
-        refund_amount,
-        refund_remarks,
-        bank_tran_id,
-        refe_id,
-        store_id: process.env.SSLCZ_STORE_ID!,
-        store_passwd: process.env.SSLCZ_STORE_PASSWD!
+      const validationData = {
+        val_id: tran_id,
+        store_id: this.storeId,
+        store_passwd: this.storePasswd,
+        format: 'json'
+      };
+
+      const response = await fetch(validationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(validationData as any).toString()
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       return result;
     } catch (error) {
-      console.error('SSLCommerz refund error:', error);
-      throw new Error('Failed to process refund');
+      console.error('SSLCommerz direct payment validation error:', error);
+      throw new Error('Failed to validate payment');
     }
   }
 }
 
-export const sslcommerzService = new SSLCommerzService();
+export const sslcommerzDirectService = new SSLCommerzDirectService();

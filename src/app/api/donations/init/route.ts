@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Donation from "@/models/Donation";
 import Project from "@/models/Project";
-import { sslcommerzService } from "@/lib/sslcommerz";
+import { sslcommerzDirectService } from "@/lib/sslcommerz-direct";
 import { env } from "@/lib/env";
 import fetch from 'node-fetch';
 
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
         store_id: storeId.substring(0, 4) + "***"
       });
 
-      const sslResult = await sslcommerzService.initiatePayment(paymentConfig);
+      const sslResult = await sslcommerzDirectService.initiatePayment(paymentConfig);
       
       console.log("SSLCommerz response:", {
         status: sslResult.status,
