@@ -23,6 +23,10 @@ export interface SSLCommerzConfig {
   ship_postcode: string;
   ship_country: string;
   multi_card_name: string;
+  shipping_method: string;
+  product_name: string;
+  product_category: string;
+  product_profile: string;
   value_a: string;
   value_b: string;
   value_c: string;
@@ -80,6 +84,10 @@ export class SSLCommerzDirectService {
         ship_postcode: config.ship_postcode || config.cus_postcode || '1000',
         ship_country: config.ship_country || config.cus_country || 'Bangladesh',
         multi_card_name: 'mobilebank',
+        shipping_method: config.shipping_method || 'NO',
+        product_name: 'Donation',
+        product_category: 'Charity',
+        product_profile: 'general',
         value_a: config.value_a || '',
         value_b: config.value_b || '',
         value_c: config.value_c || '',
