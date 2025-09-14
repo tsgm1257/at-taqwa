@@ -5,6 +5,8 @@ import { dbConnect } from "@/lib/db";
 import Report from "@/models/Report";
 import { reportUpdateSchema } from "@/lib/validators/reports";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== "Admin") {

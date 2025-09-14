@@ -6,6 +6,8 @@ import Project from "@/models/Project";
 import { projectUpdateSchema } from "@/lib/validators/content";
 import { slugify } from "@/lib/slug";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

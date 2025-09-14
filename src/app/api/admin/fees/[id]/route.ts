@@ -5,6 +5,8 @@ import { dbConnect } from "@/lib/db";
 import Fee from "@/models/Fee";
 import { adminFeeUpdateSchema } from "@/lib/validators/fees";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

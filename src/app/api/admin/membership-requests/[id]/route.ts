@@ -6,6 +6,8 @@ import MembershipRequest from "@/models/MembershipRequest";
 import User from "@/models/User";
 import { membershipModerateSchema } from "@/lib/validators/membership";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user && "role" in session.user) ? (session.user as { role?: string }).role : undefined;
